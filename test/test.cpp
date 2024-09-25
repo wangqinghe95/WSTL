@@ -1,6 +1,7 @@
 #include "wconstruct.hpp"
 #include "wvector.hpp"
 #include "utils.hpp"
+#include "witerator.hpp"
 #include <iostream>
 using namespace std;
 using namespace wstl;
@@ -25,7 +26,8 @@ void testConstruct()
 
 void testVector()
 {
-    vector<int> v_int;
+    vector<int> v_int(10);
+    
 }
 
 void testLog()
@@ -37,8 +39,8 @@ void testLog()
 
 int main()
 {
-    testConstruct();
+    // testConstruct();
     testVector();
-    testLog();
+    // testLog();
     return 0;
 }
