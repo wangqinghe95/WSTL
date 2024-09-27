@@ -12,7 +12,8 @@
  */
 
 #include "witerator.hpp"
-#include "algorithm.hpp"
+#include "walgorithm.hpp"
+#include "wconstruct.hpp"
 
 namespace wstl
 {
@@ -32,6 +33,42 @@ ForwardIter uninitialized_fill_n(ForwardIter first, Size n, const T& value)
     return wstl::unchecked_uninit_fill_n(first, n, value,
                                         std::is_trivially_copy_assignable<
                                         typename iterator_traits<ForwardIter>::value_type>{});
+}
+
+template <class InputIter, class ForwardIter>
+ForwardIter
+unchecked_uninit_copy(InputIter first, InputIter last, ForwardIter result, std::true_type)
+{
+    return wstl::copy(first, last, result);
+}
+
+template <class InputIter, class ForwardIter>
+ForwardIter
+unchecked_uninit_copy(InputIter first, InputIter last, ForwardIter result, std::false_type)
+{
+    auto cur = result;
+    try
+    {
+        for(; first != last; ++first, ++cur) {
+            wstl::construct(&*cur, *first);
+        }
+    }
+    catch(...)
+    {
+        for(; result != cur; --cur) {
+            wstl::destroy(&*cur);
+        }
+    }
+    return cur;
+}
+
+template <class InputIter, class ForwardIter>
+ForwardIter uninitialized_copy(InputIter first, InputIter last, ForwardIter result)
+{
+    return wstl::unchecked_uninit_copy(first, last, result,
+                                std::is_trivially_copy_assignable<
+                                typename iterator_traits<ForwardIter>::
+                                value_type>{});
 }
 
 

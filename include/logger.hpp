@@ -1,22 +1,19 @@
-#ifndef UTILS_HPP__
-#define UTILS_HPP__
+#ifndef LOGGER_HPP__
+#define LOGGER_HPP__
 
 /**
- * @file utils.hpp
- * @brief Responsible for the implementation of some general functions
+ * @file logger.hpp
+ * @brief Responsible for logging
  * @author wangqinghe
- * @date 9/24/2021
+ * @date 9/27/2021
  * @version 1.0
  * 
  * Copyright © Luis. All rights reserved.
  */
 
-#include <iostream>
-#include <sstream>
-#include <string>
-
 /************ Logger ******************/
 
+#define DEBUG_VERSION "20240926_01"
 #define LOG(...) Log::getInstance().printLog(__FILE__, __LINE__, __func__, __VA_ARGS__)
 
 class Log {
@@ -65,5 +62,5 @@ private:
 #endif
 
 /**
- * [day01]: use C++11 new feature to implement a LOG micro
+ * [day03] split logger.hpp from utils.hpp
  */

@@ -17,6 +17,18 @@
 namespace wstl
 {
 
+template <class T, T v>
+struct m_integral_constant
+{
+    static constexpr T value = v;
+};
+
+template <bool b>
+using m_bool_constant = m_integral_constant<bool,b>;
+
+typedef m_bool_constant<true> m_true_type;
+typedef m_bool_constant<false> m_false_type;
+
 /**
  * @brief iterator_tag, empty constructs, are used for type marking
  */
@@ -58,7 +70,6 @@ struct random_access_iterator_tag : public bidirectional_iterator_tag {};
 
 /**
  * @brief A modular iterator
- * 
  */
 template <class Category
          , class T
@@ -146,7 +157,6 @@ struct iterator_traits_helper<Iterator, true>
  * @brief A template class is used to detect whether a type T has
  *          iterator_category member type.
  */
-
 template <class T>
 struct has_iterator_cat
 {
@@ -215,6 +225,66 @@ struct iterator_traits<const T*>
     typedef const T&                            reference;
     typedef ptrdiff_t                           difference_type;
 };
+
+
+/*
+template <class Iterator>
+struct is_iterator : public m_bool_constant<is_input>
+*/
+
+/**
+ * @brief to test whether the iterator_category of one iterator type
+ *           can be converted to another type
+ */
+template <class T, class U, bool = has_iterator_cat<iterator_traits<T>>::value>
+struct has_iterator_cat_of 
+    : public m_bool_constant<std::is_convertible
+    < typename iterator_traits<T>::iterator_category, U>::value>
+{};
+
+template <class T, class U>
+struct has_iterator_cat_of<T,U,false> : public m_false_type{};
+
+template <class Iterator>
+typename iterator_traits<Iterator>::iterator_category
+iterator_category(const Iterator&) {
+    typedef typename iterator_traits<Iterator>::iterator_category Category;
+    return Category();
+}
+
+/**
+ * @brief check if an iterator is an input iterator
+ */
+template <class Iter>
+struct is_input_iterator : public has_iterator_cat_of<Iter, input_iterator_tag>
+{};
+
+template <class InputIterator>
+typename iterator_traits<InputIterator>::difference_type
+distance_dispatch(InputIterator first, InputIterator last, input_iterator_tag)
+{
+    typename iterator_traits<InputIterator>::difference_type n = 0;
+    while (first != last)
+    {
+        ++first;
+        ++n;
+    }
+    return n;    
+}
+
+template <class RandomIterator>
+typename iterator_traits<RandomIterator>::difference_type
+distance_dispatch(RandomIterator first, RandomIterator last, random_access_iterator_tag)
+{
+    return last - first;
+}
+
+template <class InputIterator>
+typename iterator_traits<InputIterator>::difference_type
+distance(InputIterator first, InputIterator last)
+{
+    return distance_dispatch(first, last, iterator_category(first));
+}
 
 }
 

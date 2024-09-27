@@ -21,8 +21,9 @@ template<class T>
 class allocator
 {
 public:
-    typedef size_t size_type;
-    typedef T value_type;
+    typedef T               value_type;
+    typedef T&              reference;
+    typedef size_t          size_type;
 public:
     static T* allocate();
     static T* allocate(size_type n);
