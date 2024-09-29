@@ -72,10 +72,48 @@ ForwardIter uninitialized_copy(InputIter first, InputIter last, ForwardIter resu
 }
 
 
+template <class InputIter, class ForwardIter>
+ForwardIter
+unchecked_uninit_move(InputIter first, InputIter last, ForwardIter result, std::true_type)
+{
+    return wstl::move(first, last, result);
+}
+
+template <class InputIter, class ForwardIter>
+ForwardIter
+unchecked_uninit_move(InputIter first, InputIter last, ForwardIter result, std::false_type)
+{
+    ForwardIter cur = result;
+    try
+    {
+        for(; first != last; ++first, ++cur) {
+            wstl::construct(&*cur, wstl::move(*first));
+        }
+    }
+    catch(...)
+    {
+        wstl::destory(result, cur);
+    }
+    return cur;
+}
+
+
+template <class InputIter, class ForwardIter>
+ForwardIter uninitialized_move(InputIter first, InputIter last,
+                                ForwardIter result)
+{
+    return wstl::unchecked_uninit_move(first, result,
+                                        std::is_trivially_move_assignable<
+                                        typename iterator_traits<InputIter>::
+                                        value_type>{});
+}
+
+
 }
 
 #endif
 
 /**
- * [day02] add function, including [uninitialized_fill_n], [unchecked_uninit_fill_n]
+ * [day02]: add function, including [uninitialized_fill_n], [unchecked_uninit_fill_n]
+ * [day04]: add unchecked_uninit_move(), uninitialized_move()
  */

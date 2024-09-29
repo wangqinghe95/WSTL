@@ -286,7 +286,92 @@ distance(InputIterator first, InputIterator last)
     return distance_dispatch(first, last, iterator_category(first));
 }
 
-}
+// reverse iterator
+template <class Iterator>
+class reverse_iterator
+{
+private:
+    Iterator current;
+public:
+    typedef typename iterator_traits<Iterator>::iterator_category   iterator_category;
+    typedef typename iterator_traits<Iterator>::value_type          value_type;
+    typedef typename iterator_traits<Iterator>::difference_type     difference_type;
+    typedef typename iterator_traits<Iterator>::pointer             pointer;
+    typedef typename iterator_traits<Iterator>::reference           reference;
+
+    typedef Iterator                                                iterator_type;
+    typedef reverse_iterator<Iterator>                              self;
+
+public:
+    // constructor
+    reverse_iterator(){}
+    explicit reverse_iterator(iterator_type iter) : current(iter){}
+    reverse_iterator(const self& rhs) : current(rhs.current){}
+
+public:
+    // get corresponding forward iterator
+    iterator_type base() const {
+        return current;
+    }
+
+    // reload operator
+    reference operator*() const {
+        auto tmp = current;
+        return *--tmp;
+    }
+    pointer operator->() const {
+        return &(operator*());
+    }
+
+    // reload opeartor++
+    // reverse iterator(--) means forward iterator(++)
+    self& operator++(){
+        --current;
+        return *this;
+    }
+
+    self operator++(int) {
+        self tmp = *this;
+        --current;
+        return tmp;
+    }
+
+    // reverse iterator(++) means forward iterator(--)
+    self& operator--() {
+        ++current;
+        return *this;
+    }
+    
+    self operator--(int) {
+        self tmp = *this;
+        ++current;
+        return tmp;
+    }
+
+    self& operator+=(difference_type n) {
+        current -= n;
+        return *this;
+    }
+
+    self operator+(difference_type n) const {
+        return self(current - n);
+    }
+
+    self& operator-=(difference_type n) {
+        current += n;
+        return *this;
+    }
+
+    self operator-(difference_type n) const {
+        return self(current + n);
+    }
+
+    reference operator[](difference_type n) const {
+        return *(*this + n);
+    }
+};
+
+}   // namespace
 
 #endif
 
@@ -294,4 +379,5 @@ distance(InputIterator first, InputIterator last)
  * [day02]: add template class iterator as well as a series of auxiliary
  *          functions related to it, including [iterator_traits_impl], [iterator_traits_helper]
  *          [has_iterator_cat], [iterator_traits]
+ * [day04]: add reverse_iterator class
  */

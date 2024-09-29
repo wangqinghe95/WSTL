@@ -34,6 +34,8 @@ public:
     
     typedef value_type*                             iterator;
     typedef const value_type*                       const_iterator;
+    typedef wstl::reverse_iterator<iterator>        reverse_iterator;
+    typedef wstl::reverse_iterator<const_iterator>  const_reverse_iterator;
 
 private:
     iterator begin_;
@@ -92,7 +94,8 @@ public:
     }
 
     ~vector() {
-        // TODO 1
+        destroy_and_recovery(begin_, end_, cap_ - begin_);
+        begin_ = end_ = cap_ = nullptr;
     }
 
 public:
@@ -110,18 +113,102 @@ public:
         return end_;
     }
 
+    reverse_iterator rbegin()   noexcept {
+        return reverse_iterator(end());
+    }
+
+    const_reverse_iterator rbegin() const   noexcept {
+        return const_reverse_iterator(end());
+    }
+
+    reverse_iterator rend()   noexcept {
+        return reverse_iterator(begin());
+    }
+
+    const_reverse_iterator rend() const   noexcept {
+        return const_reverse_iterator(begin());
+    }
+
+    const_iterator cbegin() const noexcept {
+        return begin();
+    }
+    const_iterator cend() const noexcept {
+        return end();
+    }
+    const_reverse_iterator crbegin() const noexcept {
+        return rbegin();
+    }
+    const_reverse_iterator crend() const noexcept {
+        return rend();
+    }
+
     // capacity related function
+    bool empty() const noexcept {
+        return begin_ == end_;
+    }
+
     size_type size() const noexcept {
         return static_cast<size_type>(end_ - begin_);
     }
+
+    size_type max_size() const noexcept {
+        return static_cast<size_type>(-1) / sizeof(T);
+    }
+
     size_type capacity() const noexcept {
         return static_cast<size_type>(cap_ - begin_); 
     }
+
+    void reverse(size_type n);
+    void shrink_to_fit();
 
     // visit element related function
     reference operator[](size_type n) {
         WSTL_DEBUG(n < size());
         return *(begin_ + n);
+    }
+
+    const reference operator[](size_type n) const {
+        WSTL_DEBUG(n < size());
+        return *(begin_ + n);
+    }
+
+    reference at(size_type n) {
+        THROW_OUT_OF_RANGE_IF(!(n < size()), "vector<T>::at() subscript out of range");
+        return (*this)[n];
+    }
+
+    const reference at(size_type n) const {
+        THROW_OUT_OF_RANGE_IF(!(n < size()), "vector<T>::at() subscript out of range");
+        return (*this)[n];
+    }
+
+    reference front() {
+        WSTL_DEBUG(!empty());
+        return *begin_;
+    }
+
+    const_reference front() const {
+        WSTL_DEBUG(!empty());
+        return *begin_;
+    }
+
+    reference back() {
+        WSTL_DEBUG(!empty());
+        return *(end_ - 1);
+    }
+
+    const reference back() const {
+        WSTL_DEBUG(!empty());
+        return *(end_ - 1);
+    }
+
+    pointer data() noexcept {
+        return begin_;
+    }
+
+    const_pointer data() const noexcept {
+        return begin_;
     }
 
     void swap(vector& rhs) noexcept;
@@ -135,6 +222,7 @@ private:
     template <class Iter>
     void    range_init(Iter first, Iter last);
     void    destroy_and_recovery(iterator first, iterator last, size_type n);
+    void    reinsert(size_type size);
 };
 
 template <class T>
@@ -251,6 +339,50 @@ void vector<T>::destroy_and_recovery(iterator first, iterator last, size_type n)
     data_allocator::deallocate(first, n);
 }
 
+template <class T>
+void vector<T>::reinsert(size_type size)
+{
+    auto new_begin = data_allocator::allocate(size);
+    try
+    {
+        wstl::uninitialized_move(begin_, end_, new_begin);
+    }
+    catch(...)
+    {
+        data_allocator::deallocate(new_begin, size);
+        throw;
+    }
+
+    data_allocator::deallocate(begin_, cap_ - begin_);
+    begin_ = new_begin;
+    end_ = begin_ + size;
+    cap_ = begin_ + size;    
+}
+
+template <class T>
+void vector<T>::reverse(size_type n)
+{
+    if(capacity() < n) {
+        THROW_LENGTH_ERROR_IF(n > max_size(), 
+            "n can't larger than max_size() in vector<T>::reverse(n)");
+        const auto old_size = size();
+        auto tmp = data_allocator::allocate(n);
+        wstl::uninitialized_move(begin_, end_, tmp);
+        data_allocator::deallocate(begin_, cap_ - begin_);
+        begin_ = tmp;
+        end_ = tmp + old_size;
+        cap_ = begin_ + n;
+    }
+}
+
+template <class T>
+void vector<T>::shrink_to_fit()
+{
+    if(end_ < cap_) {
+        reinsert(size());
+    }
+}
+
 }   // namespace wstl
 #endif
 
@@ -259,4 +391,5 @@ void vector<T>::destroy_and_recovery(iterator first, iterator last, size_type n)
  * [day02]: add explicit vector(size_type n) and its dependency function
  * [day03]: add copy/move constrcutor and move constructor
  *          add copy/move the assignment opeator function
+ * [day04]: add fucntion related with iterator and capacity
  */
