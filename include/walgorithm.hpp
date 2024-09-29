@@ -59,7 +59,6 @@ unchecked_fill_n(Tp* first, Size n, Up value)
 template <class OutputIter, class Size, class T>
 OutputIter unchecked_fill_n(OutputIter first, Size n, const T& value)
 {
-    LOG(value);
     for(; n > 0; --n, ++first) {
         *first = value;
     }
@@ -129,5 +128,5 @@ OutputIter copy(InputIter first, InputIter last, OutputIter result)
 
 /**
  * [day02]: add compare function [max] 
- *          and fill function, such as [fill_n],[unchecked_fill_n] 
- */
+ *          and fill function, such as [fill_n],[unchecked_fill_n]
+*/

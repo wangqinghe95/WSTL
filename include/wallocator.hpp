@@ -13,6 +13,7 @@
 
 #include <cstddef>
 #include "utils.hpp"
+#include "wconstruct.hpp"
 
 namespace wstl
 {
@@ -30,6 +31,16 @@ public:
 
     static void deallocate(T* ptr);
     static void deallocate(T* ptr, size_type n);
+
+    static void construct(T* ptr);
+    static void construct(T* ptr, const T&value);
+    static void construct(T* ptr, T&& value);
+
+    template <class ...Args>
+    static void construct(T* ptr, Args&& ...args);
+
+    static void destroy(T* ptr);
+    static void destroy(T* first, T* last);
 };
 
 template <class T>
@@ -59,6 +70,48 @@ void allocator<T>::deallocate(T* ptr, size_type n)
     ::operator delete(ptr);
 }
 
+template <class T>
+void allocator<T>::construct(T* ptr)
+{
+    wstl::construct(ptr);
+}
+
+template <class T>
+void allocator<T>::construct(T* ptr, const T&value)
+{
+    wstl::construct(ptr, value);
+}
+
+template <class T>
+void allocator<T>::construct(T* ptr, T&& value)
+{
+    wstl::construct(ptr, wstl::move(value));
+}
+
+template <class T>
+template <class ...Args>
+void allocator<T>::construct(T* ptr, Args&& ...args)
+{
+    wstl::construct(ptr, wstl::forward<Args>(args)...);
+}
+
+template <class T>
+void allocator<T>::destroy(T* ptr)
+{
+    wstl::destroy(ptr);
+}
+
+template <class T>
+void allocator<T>::destroy(T* first, T* last)
+{
+    wstl::destroy(first, last);
+}
+
+
 }
 
 #endif
+
+/**
+ * [day03] add a series of functions of construct and destroy
+ */

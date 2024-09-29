@@ -16,6 +16,7 @@
 #include "utils.hpp"
 #include "uninitialized.hpp"
 #include "wexcepdef.hpp"
+#include "wconstruct.hpp"
 
 namespace wstl
 {
@@ -44,13 +45,12 @@ public:
         try_init();
     }
     explicit vector(size_type n) {
-        fill_init(n, value_type());
         /**
          * if value_type is basic data type, such as char, int, float
          * then value_type() is the default value for char, int, float
          * or value is a self-define data type, it will call construct of value
          */
-        LOG(n, value_type());
+        fill_init(n, value_type());
     }
 
     vector(size_type n, const value_type& value) {
@@ -62,6 +62,37 @@ public:
     vector(Iter first, Iter last) {
         WSTL_DEBUG(!(first > last));
         range_init(first, last);
+    }
+
+    vector(const vector& rhs) {
+        range_init(rhs.begin_, rhs.end_);
+    }
+
+    vector(vector&& rhs) noexcept : begin_(rhs.begin_)
+                                 , end_(rhs.end_)
+                                 , cap_(rhs.cap_)
+    {
+        rhs.begin_ = nullptr;
+        rhs.end_ = nullptr;
+        rhs.cap_ = nullptr;
+    }
+
+    vector(std::initializer_list<value_type> _list) {
+        range_init(_list.begin(), _list.end());
+    }
+
+    vector& operator=(const vector& rhs);
+
+    vector& operator=(vector&& rhs) noexcept;
+
+    vector& operator=(std::initializer_list<value_type> _list) {
+        vector tmp(_list.begin(), _list.end());
+        swap(tmp);
+        return *this;        
+    }
+
+    ~vector() {
+        // TODO 1
     }
 
 public:
@@ -83,6 +114,9 @@ public:
     size_type size() const noexcept {
         return static_cast<size_type>(end_ - begin_);
     }
+    size_type capacity() const noexcept {
+        return static_cast<size_type>(cap_ - begin_); 
+    }
 
     // visit element related function
     reference operator[](size_type n) {
@@ -90,15 +124,71 @@ public:
         return *(begin_ + n);
     }
 
-private:
-    void try_init() noexcept;
+    void swap(vector& rhs) noexcept;
 
-    void fill_init(size_type n, const value_type& value);
-    void init_space(size_type size, size_type c);
+private:
+    void    try_init() noexcept;
+
+    void    fill_init(size_type n, const value_type& value);
+    void    init_space(size_type size, size_type c);
 
     template <class Iter>
-    void range_init(Iter first, Iter last);
+    void    range_init(Iter first, Iter last);
+    void    destroy_and_recovery(iterator first, iterator last, size_type n);
 };
+
+template <class T>
+vector<T>& vector<T>::operator=(const vector& rhs)
+{
+    LOG("....");
+    if(this != &rhs) {
+        const auto len = rhs.size();
+        if(len > capacity()) {
+            vector tmp(rhs.begin(),rhs.end());
+            swap(tmp);
+        }
+        else if(size() >= len) {
+            auto i = wstl::copy(rhs.begin(), rhs.end(), begin());
+            data_allocator::destroy(i, end_);
+            end_ = begin_ + len;
+        }
+        else {
+            wstl::copy(rhs.begin(),rhs.begin() + size(), begin_);
+            wstl::uninitialized_copy(rhs.begin() + size(), rhs.end(), end_);
+            cap_ = end_ = begin_ + len;
+        }
+    }
+    return *this;
+}
+
+template <class T>
+vector<T>& vector<T>::operator=(vector&& rhs) noexcept
+{
+    destroy_and_recovery(begin_, end_, cap_ - begin_);
+    begin_ = rhs.begin_;
+    end_ = rhs.end_;
+    cap_ = rhs.cap_;
+    rhs.begin_ = nullptr;
+    rhs.end_ = nullptr;
+    rhs.cap_ = nullptr;
+    return *this;
+}
+
+template <class T>
+void vector<T>::swap(vector<T>& rhs) noexcept
+{
+    if(this != &rhs) {
+        wstl::swap(begin_, rhs.begin_);
+        wstl::swap(end_, rhs.end_);
+        wstl::swap(cap_, rhs.cap_);
+    }
+}
+
+template <class T>
+void swap(vector<T>& lhs, vector<T>& rhs)
+{
+    lhs.swap(rhs);
+}
 
 template <class T>
 void vector<T>::try_init() noexcept
@@ -154,10 +244,19 @@ range_init(Iter first, Iter last)
     wstl::uninitialized_copy(first, last, begin_);
 }
 
+template <class T>
+void vector<T>::destroy_and_recovery(iterator first, iterator last, size_type n)
+{
+    data_allocator::destroy(first, last);
+    data_allocator::deallocate(first, n);
+}
+
 }   // namespace wstl
 #endif
 
 /**
  * [day01]: implement a try_init() to verify that the allocator is valid
  * [day02]: add explicit vector(size_type n) and its dependency function
+ * [day03]: add copy/move constrcutor and move constructor
+ *          add copy/move the assignment opeator function
  */

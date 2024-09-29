@@ -20,6 +20,15 @@
 namespace wstl
 {
 
+// move
+
+template <class T>
+typename std::remove_reference<T>::type&& move(T&& arg) noexcept
+{
+    return static_cast<typename std::remove_reference<T>::type&&>(arg);
+}
+
+// forward
 template <class T>
 T&& forward(typename std::remove_reference<T>::type& arg) noexcept
 {
@@ -33,10 +42,19 @@ T&& forward(typename std::remove_reference<T>::type&& arg) noexcept
     return static_cast<T&&>(arg);
 }
 
+template <class Tp>
+void swap(Tp& lhs, Tp& rhs)
+{
+    auto tmp(wstl::move(lhs));
+    lhs = wstl::move(rhs);
+    rhs = move(tmp);
+}
+
 }
 
 #endif
 
 /**
  * [day01]: use C++11 new feature to implement a LOG micro
+ * [day02]: add move() and swap()
  */

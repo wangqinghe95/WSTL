@@ -32,13 +32,13 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cpp | $(OBJ_DIR)
 
 # 创建构建目录和二进制文件目录
 $(OBJ_DIR):
-	mkdir -p $(OBJ_DIR)
+	@mkdir -p $(OBJ_DIR)
 
 $(BIN_DIR):
-	mkdir -p $(BIN_DIR)
+	@mkdir -p $(BIN_DIR)
+
+.PHONY: all clean
 
 # 清理生成的文件
 clean:
-	rm -rf $(BUILD_DIR) $(BIN_DIR)
-
-.PHONY: all clean
+	rm -rf $(BUILD_DIR)/* $(BIN_DIR)/*
