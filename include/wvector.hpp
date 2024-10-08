@@ -25,11 +25,14 @@ template <class T>
 class vector
 {
 public:
-    typedef wstl::allocator<T>                      allocator_type;
-    typedef wstl::allocator<T>                      data_allocator;
-    typedef typename allocator_type::value_type     value_type;
-    typedef typename allocator_type::reference      reference;
-    typedef typename allocator_type::size_type      size_type;
+    typedef wstl::allocator<T>                          allocator_type;
+    typedef wstl::allocator<T>                          data_allocator;
+    typedef typename allocator_type::value_type         value_type;
+    typedef typename allocator_type::pointer            pointer;
+    typedef typename allocator_type::const_pointer      const_pointer;
+    typedef typename allocator_type::reference          reference;
+    typedef typename allocator_type::const_reference    const_reference;
+    typedef typename allocator_type::size_type          size_type;
 
     
     typedef value_type*                             iterator;
@@ -211,6 +214,18 @@ public:
         return begin_;
     }
 
+    // modify container-related operations
+    void assign(size_type n, const value_type &value) {
+        fill_assgin(n, value);
+    }
+
+    // erase / clear
+    iterator erase(const_iterator pos);
+    iterator erase(const_iterator first, const_iterator last);
+    void clear() {
+        erase(begin(), end());
+    }
+
     void swap(vector& rhs) noexcept;
 
 private:
@@ -223,6 +238,7 @@ private:
     void    range_init(Iter first, Iter last);
     void    destroy_and_recovery(iterator first, iterator last, size_type n);
     void    reinsert(size_type size);
+    void    fill_assign(size_type n, const value_type& value);
 };
 
 template <class T>
@@ -383,6 +399,45 @@ void vector<T>::shrink_to_fit()
     }
 }
 
+template <class T>
+void vector<T>::
+fill_assign(size_type n, const value_type& value)
+{
+    if(n > capacity()) {
+        vector tmp(n, value);
+        swap(tmp);
+    }
+    else if(n > size()) {
+        wstl::fill(begin(), end(), value);
+        end_ = wstl::uninitialized_fill_n(end_, n-size(), value);
+    }
+    else {
+        erase(wstl::fill_n(begin_, n, value), end_);
+    }
+}
+
+template <class T>
+typename vector<T>::iterator
+vector<T>::erase(const_iterator pos) {
+    MYSTL_DEBUG(pos >= begin() && pos < end());
+    iterator xpos = begin_ + (pos - begin());
+    wstl::move(xpos + 1, end_, xpos);
+    data_allocator::destroy(end_ - 1);
+    --end_;
+    return xpos;
+}
+
+template <class T>
+typename vector<T>::iterator
+vector<T>::erase(const_iterator first, const_iterator last) {
+    MYSTL_DEBUG(first >= begin() && last <= end() && !(last < first));
+    const auto n = first - begin();
+    iterator it = begin_ + (first - begin_);
+    data_allocator::destroy(wstl::move(it+(last - first), end_, it), end_);
+    end_ = end_ - (last - first);
+    return begin_ + n;
+}
+
 }   // namespace wstl
 #endif
 
@@ -392,4 +447,6 @@ void vector<T>::shrink_to_fit()
  * [day03]: add copy/move constrcutor and move constructor
  *          add copy/move the assignment opeator function
  * [day04]: add fucntion related with iterator and capacity
+ * [day05]: add some type of T
+ *          add member function, [erase], [fill_assign]
  */

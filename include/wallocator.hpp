@@ -23,8 +23,12 @@ class allocator
 {
 public:
     typedef T               value_type;
+    typedef T*              pointer;
+    typedef const T*        const_pointer;
     typedef T&              reference;
+    typedef const T&        const_reference;
     typedef size_t          size_type;
+    typedef ptrdiff_t       difference_type;
 public:
     static T* allocate();
     static T* allocate(size_type n);
@@ -114,4 +118,5 @@ void allocator<T>::destroy(T* first, T* last)
 
 /**
  * [day03] add a series of functions of construct and destroy
+ * [day05] add some types of T
  */

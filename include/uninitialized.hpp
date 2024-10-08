@@ -92,7 +92,7 @@ unchecked_uninit_move(InputIter first, InputIter last, ForwardIter result, std::
     }
     catch(...)
     {
-        wstl::destory(result, cur);
+        wstl::destroy(result, cur);
     }
     return cur;
 }

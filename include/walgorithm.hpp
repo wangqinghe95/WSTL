@@ -122,6 +122,29 @@ OutputIter copy(InputIter first, InputIter last, OutputIter result)
     return unchecked_copy(first, last, result);
 }
 
+template <class ForwardIter, class T>
+void fill_cat(ForwardIter first, ForwardIter last, const T& value,
+                    wstl::forward_iterator_tag)
+{
+    for(; first != last; ++first) {
+        *first = value;
+    }
+}
+
+template <class RandomIter, class T>
+void fill_cat(RandomIter first, RandomIter last, const T& value,
+                wstl::random_access_iterator_tag)
+{
+    fill_n(first, last-first, value);
+}
+
+template <class ForwardIter, class T>
+void fill(ForwardIter first, ForwardIter last, const T& value) 
+{
+    fill_cat(first, last, value, iterator_category(first));
+}
+
+
 }   // namespace wstl
 
 #endif
@@ -129,4 +152,5 @@ OutputIter copy(InputIter first, InputIter last, OutputIter result)
 /**
  * [day02]: add compare function [max] 
  *          and fill function, such as [fill_n],[unchecked_fill_n]
+ * [dao05]: add fill function, [fill], [fill_cat]
 */
