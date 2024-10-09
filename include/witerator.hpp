@@ -371,6 +371,37 @@ public:
     }
 };
 
+template <class InputIterator, class Distance>
+void advance_dispatch(InputIterator& i, Distance n, input_iterator_tag)
+{
+    while(n--) {
+        ++i;
+    }
+}
+
+template <class BidirectionalIterator, class Distance>
+void advance_dispatch(BidirectionalIterator& i, Distance n, bidirectional_iterator_tag)
+{
+    if(n >= 0) {
+        while(n--) ++i;
+    }
+    else {
+        while(n++) --i;
+    }
+}
+
+template <class RandomIter, class Distance>
+void advance_dispatch(RandomIter& i, Distance n, random_access_iterator_tag)
+{
+    i += n;
+}
+
+template <class InputIterator, class Distance>
+void advance(InputIterator& i, Distance n)
+{
+    advance_dispatch(i, n, iterator_category(i));
+}
+
 }   // namespace
 
 #endif
@@ -380,4 +411,5 @@ public:
  *          functions related to it, including [iterator_traits_impl], [iterator_traits_helper]
  *          [has_iterator_cat], [iterator_traits]
  * [day04]: add reverse_iterator class
+ * [day06]: add [advance], [advance_dispatch] template function
  */

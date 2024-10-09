@@ -36,10 +36,10 @@ int main()
     int arr[] = {1,2,3,4,5};
     wstl::vector<int> vec(arr, arr+sizeof(arr)/sizeof(int));
 
-    LOG("test_copy_construct");
+    // LOG("test_copy_construct");
 
     wstl::vector<int> test_copy_construct(vec);
-    printVec(test_copy_construct);
+    // printVec(test_copy_construct);
 
     // LOG("test_move_construct");
     LOG(vec.size());
@@ -47,7 +47,16 @@ int main()
     wstl::vector<int> test_move_construct;
     test_move_construct = wstl::move(vec);
     // LOG(test_move_construct.size());
-    printVec(test_move_construct);
+    // printVec(test_move_construct);
+
+    LOG("test assign");
+    wstl::vector<int> v1 = {1,2,3,4,5};
+    wstl::vector<int> v2 = {6,7,8,9,10};
+    v1.assign(v2.begin(), v2.end());
+    // printVec(v1);
+
+    v1.assign({3, 1});
+    printVec(v1);
 
     return 0;
 }

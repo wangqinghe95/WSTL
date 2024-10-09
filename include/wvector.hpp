@@ -216,7 +216,18 @@ public:
 
     // modify container-related operations
     void assign(size_type n, const value_type &value) {
-        fill_assgin(n, value);
+        fill_assign(n, value);
+    }
+
+    template <class Iter, typename std::enable_if<
+            wstl::is_input_iterator<Iter>::value, int>::type = 0>
+    void assign(Iter first, Iter last) {
+        WSTL_DEBUG(!(last < first));
+        copy_assign(first, last, iterator_category(first));
+    }
+
+    void assign(std::initializer_list<value_type> il) {
+        copy_assign(il.begin(), il.end(), wstl::forward_iterator_tag{});
     }
 
     // erase / clear
@@ -239,6 +250,11 @@ private:
     void    destroy_and_recovery(iterator first, iterator last, size_type n);
     void    reinsert(size_type size);
     void    fill_assign(size_type n, const value_type& value);
+
+    template <class IIter>
+    void    copy_assign(IIter first, IIter last, input_iterator_tag);
+    template <class FIter>
+    void    copy_assign(FIter first, FIter last, forward_iterator_tag);
 };
 
 template <class T>
@@ -419,7 +435,7 @@ fill_assign(size_type n, const value_type& value)
 template <class T>
 typename vector<T>::iterator
 vector<T>::erase(const_iterator pos) {
-    MYSTL_DEBUG(pos >= begin() && pos < end());
+    WSTL_DEBUG(pos >= begin() && pos < end());
     iterator xpos = begin_ + (pos - begin());
     wstl::move(xpos + 1, end_, xpos);
     data_allocator::destroy(end_ - 1);
@@ -430,12 +446,52 @@ vector<T>::erase(const_iterator pos) {
 template <class T>
 typename vector<T>::iterator
 vector<T>::erase(const_iterator first, const_iterator last) {
-    MYSTL_DEBUG(first >= begin() && last <= end() && !(last < first));
+    WSTL_DEBUG(first >= begin() && last <= end() && !(last < first));
     const auto n = first - begin();
     iterator it = begin_ + (first - begin_);
     data_allocator::destroy(wstl::move(it+(last - first), end_, it), end_);
     end_ = end_ - (last - first);
     return begin_ + n;
+}
+
+template <class T>
+template <class IIter>
+void vector<T>::copy_assign(IIter first, IIter last, input_iterator_tag)
+{
+    auto cur = begin_;
+    for(; first != last && cur != end_; ++first, ++cur) {
+        *cur = *first;
+    }
+
+    if(first == last) {
+        erase(cur, end_);
+    }
+    else {
+        insert(end_, first, last);
+    }
+}
+
+template <class T>
+template <class FIter>
+void vector<T>::copy_assign(FIter first, FIter last, forward_iterator_tag)
+{
+    const size_type len = wstl::distance(first, last);
+    if(len > capacity()) {
+        vector tmp(first, last);
+        swap(tmp);
+    }
+    else if(size() >= len) {
+        auto new_end = wstl::copy(first, last, begin_);
+        data_allocator::destroy(new_end, end_);
+        end_ = new_end;
+    }
+    else {
+        auto mid = first;
+        wstl::advance(mid, size());
+        wstl::copy(first, mid, begin_);
+        auto new_end = wstl::uninitialized_copy(mid, last, end_);
+        end_ = new_end;
+    }
 }
 
 }   // namespace wstl
@@ -449,4 +505,5 @@ vector<T>::erase(const_iterator first, const_iterator last) {
  * [day04]: add fucntion related with iterator and capacity
  * [day05]: add some type of T
  *          add member function, [erase], [fill_assign]
+ * [day06]: add member function, [assign], [copy_assign]
  */
