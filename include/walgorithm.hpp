@@ -144,6 +144,26 @@ void fill(ForwardIter first, ForwardIter last, const T& value)
     fill_cat(first, last, value, iterator_category(first));
 }
 
+template <class Tp, class Up>
+typename std::enable_if<
+    std::is_same<typename std::remove_const<Tp>::type, Up>::value &&
+    std::is_trivially_move_assignable<Up>::value,
+    Up*>::type
+unchecked_move(Tp* first, Tp* last, Up* result)
+{
+    const size_t n = static_cast<size_t>(last - result);
+    if(0 != n) {
+        std::memmove(result, first, n * sizeof(Up));
+    }
+    return result + n;
+}
+
+// move
+template <class InputIter, class OutputIter>
+OutputIter move(InputIter first, InputIter last, OutputIter result)
+{
+    return unchecked_move(first, last, result);
+}
 
 }   // namespace wstl
 

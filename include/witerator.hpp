@@ -168,7 +168,7 @@ private:
      * @param ... : lists of variable parameters
      * @return struct two: 
      */
-    template <class U> struct two test(...);
+    template <class U> static two test(...);
     /**
      * @brief A function template, this version will be seclecte if U has a iterator_category member
      * @param A pointer to U::iterator_category
@@ -191,11 +191,11 @@ public:
 
 /**
  * @brief A template structure, it is used to extract the features of the iterators
- * @note if [has_iterator_cat<Iteraotr>::value] is true, that means Iterator has a iterator_category member
+ * @note if [has_iterator_cat<Iterator>::value] is true, that means Iterator has a iterator_category member
  *          then iterator_traits inherits a specialized version of iterator_traits_helper with a member variable
  */
-template <class Iteraotr>
-struct iterator_traits : public iterator_traits_helper<Iteraotr, has_iterator_cat<Iteraotr>::value>
+template <class Iterator>
+struct iterator_traits : public iterator_traits_helper<Iterator, has_iterator_cat<Iterator>::value>
 {};
 
 /**
