@@ -1,8 +1,6 @@
 #include "wvector.hpp"
 #include "utils.hpp"
 
-#define LOG_SEPARATOR(msg) std::cout << "----------------------------" << std::endl;
-
 class TestClass
 {
 public:
@@ -20,47 +18,62 @@ std::ostream& operator<<(std::ostream& os, const TestClass& _class) {
     return os;
 }
 
-void printVec(wstl::vector<int>& print_vec)
+void printVec(const std::string& log, wstl::vector<int>& print_vec)
 {
+    std::cout << log << " start" << std::endl;
     for(int i = 0; i < (int)print_vec.size(); ++i) {
-        LOG("vec[i] : ", print_vec[i]);
+        std::cout << print_vec[i] << "\t";
     }
+    std::cout << "\n";
+    std::cout << log << " end" << std::endl;
+}
+
+void testEmplace()
+{
+    LOG_SEPARATOR_START();
+    wstl::vector<int> vec;
+    vec.emplace(vec.begin(), 2);
+    printVec("test emplace", vec);
+    LOG_SEPARATOR_END();
+}
+
+void testResize()
+{
+    LOG_SEPARATOR_START();
+    wstl::vector<int> vec{1,2,4,5};
+
+    vec.resize(10,5);
+    printVec("Expand vec size", vec);
+
+    vec.resize(7);
+    printVec("Expand Vec size with default value", vec);
+
+    vec.resize(3);
+    printVec("Reduce Vec size", vec);
+    LOG_SEPARATOR_END();
+}
+
+void testInsert()
+{
+    LOG_SEPARATOR_START();
+    wstl::vector<int> vec{1,2,3};
+    vec.insert(vec.begin() + 1, 42);
+    printVec("insert single element(left value)", vec);
+
+    vec.insert(vec.begin()+2, 2, 77);
+    printVec("insert multiple same element", vec);
+
+    wstl::vector<int> vec2{100,200};
+    vec.insert(vec.begin()+5, vec2.begin(), vec2.end());
+    printVec("insert iterator range element", vec);
+
+    LOG_SEPARATOR_END();
 }
 
 int main()
 {
-    // wstl::vector<TestClass> test_class(3);
-
-    wstl::vector<int> test_int(3);
-
-    int arr[] = {1,2,3,4,5};
-    wstl::vector<int> vec(arr, arr+sizeof(arr)/sizeof(int));
-
-    // LOG("test_copy_construct");
-
-    wstl::vector<int> test_copy_construct(vec);
-    // printVec(test_copy_construct);
-
-    // LOG("test_move_construct");
-    // LOG(vec.size());
-
-    wstl::vector<int> test_move_construct;
-    test_move_construct = wstl::move(vec);
-    // LOG(test_move_construct.size());
-    // printVec(test_move_construct);
-
-    LOG("test assign");
-    wstl::vector<int> v1 = {1,2,3,4,5};
-    wstl::vector<int> v2 = {6,7,8,9,10};
-    v1.assign(v2.begin(), v2.end());
-
-    v1.assign({3, 1});
-
-    wstl::vector<int> ve1;
-    ve1.assign(3,8);
-    
-    
-
-
+    testInsert();
+    // testEmplace();
+    // testResize();
     return 0;
 }

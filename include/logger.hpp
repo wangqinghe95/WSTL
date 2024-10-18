@@ -14,6 +14,8 @@
 /************ Logger ******************/
 
 #define DEBUG_VERSION "20240926_01"
+#define LOG_SEPARATOR_START() std::cout << "-----------" << __func__ <<  " start -----------------" << std::endl;
+#define LOG_SEPARATOR_END() std::cout << "-----------" << __func__ <<  " end -----------------" << std::endl;
 #define LOG(...) Log::getInstance().printLog(__FILE__, __LINE__, __func__, __VA_ARGS__)
 
 class Log {

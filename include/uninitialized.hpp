@@ -102,7 +102,7 @@ template <class InputIter, class ForwardIter>
 ForwardIter uninitialized_move(InputIter first, InputIter last,
                                 ForwardIter result)
 {
-    return wstl::unchecked_uninit_move(first, result,
+    return wstl::unchecked_uninit_move(first, last ,result,
                                         std::is_trivially_move_assignable<
                                         typename iterator_traits<InputIter>::
                                         value_type>{});

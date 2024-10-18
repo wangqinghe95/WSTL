@@ -17,7 +17,7 @@ EXEC_FILES := $(patsubst $(SRC_DIR)/%.cpp, $(BIN_DIR)/%, $(SRC_FILES))
 
 # 编译器和编译选项
 CXX := g++
-CXXFLAGS := -I$(INC_DIR) -Wall -O2
+CXXFLAGS := -I$(INC_DIR) -Wall -O2 -g
 
 # 默认目标
 all: $(EXEC_FILES)

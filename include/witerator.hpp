@@ -259,6 +259,13 @@ template <class Iter>
 struct is_input_iterator : public has_iterator_cat_of<Iter, input_iterator_tag>
 {};
 
+template <class Iterator>
+typename iterator_traits<Iterator>::value_type*
+value_type(const Iterator&)
+{
+    return static_cast<typename iterator_traits<Iterator>::value_type*>(0);
+}
+
 template <class InputIterator>
 typename iterator_traits<InputIterator>::difference_type
 distance_dispatch(InputIterator first, InputIterator last, input_iterator_tag)

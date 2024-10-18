@@ -17,6 +17,8 @@
 #include "uninitialized.hpp"
 #include "wexcepdef.hpp"
 #include "wconstruct.hpp"
+#include "wmemory.hpp"
+#include "witerator.hpp"
 
 namespace wstl
 {
@@ -230,12 +232,39 @@ public:
         copy_assign(il.begin(), il.end(), wstl::forward_iterator_tag{});
     }
 
+    // emplace / emplace_back
+    template <class... Args>
+    iterator emplace(const_iterator pos, Args&& ...args);
+
+    // insert
+    iterator insert(const_iterator pos, const value_type& value);
+    iterator insert(const_iterator pos, value_type&& value) {
+        return emplace(pos, wstl::move(value));
+    }
+    iterator insert(const_iterator pos, size_type n, const value_type& value) {
+        WSTL_DEBUG(pos >= begin() && pos <= end());
+        return fill_insert(const_cast<iterator>(pos), n, value);
+    }
+    template <class Iter, typename std::enable_if<
+            wstl::is_input_iterator<Iter>::value, int>::type = 0>
+    void insert(const_iterator pos, Iter first, Iter last)
+    {
+        WSTL_DEBUG(pos >= begin() && pos <= end() && !(last < first));
+        copy_insert(const_cast<iterator>(pos), first, last);
+    }
+
     // erase / clear
     iterator erase(const_iterator pos);
     iterator erase(const_iterator first, const_iterator last);
     void clear() {
         erase(begin(), end());
     }
+
+    void resize(size_type new_size) {
+        return resize(new_size, value_type());
+    }
+
+    void resize(size_type new_size, const value_type& value);
 
     void swap(vector& rhs) noexcept;
 
@@ -251,16 +280,28 @@ private:
     void    reinsert(size_type size);
     void    fill_assign(size_type n, const value_type& value);
 
+    // calculate the growth size
+    size_type get_new_cap(size_type add_size);
+
     template <class IIter>
     void    copy_assign(IIter first, IIter last, input_iterator_tag);
     template <class FIter>
     void    copy_assign(FIter first, FIter last, forward_iterator_tag);
+
+    // reallocate
+    template <class... Args>
+    void    reallocate_emplace(iterator pos, Args&& ...args);
+    void    reallocate_insert(iterator pos, const value_type& value);
+
+    // insert
+    iterator    fill_insert(iterator pos, size_type n, const value_type& value);
+    template <class IIter>
+    void        copy_insert(iterator pos, IIter first, IIter last);
 };
 
 template <class T>
 vector<T>& vector<T>::operator=(const vector& rhs)
 {
-    LOG("....");
     if(this != &rhs) {
         const auto len = rhs.size();
         if(len > capacity()) {
@@ -292,6 +333,17 @@ vector<T>& vector<T>::operator=(vector&& rhs) noexcept
     rhs.end_ = nullptr;
     rhs.cap_ = nullptr;
     return *this;
+}
+
+template <class T>
+void vector<T>::resize(size_type new_size, const value_type& value)
+{
+    if(new_size < size()) {
+        erase(begin() + new_size, end());
+    }
+    else {
+        insert(end(), new_size - size(), value);
+    }
 }
 
 template <class T>
@@ -433,6 +485,57 @@ fill_assign(size_type n, const value_type& value)
 }
 
 template <class T>
+template <class... Args>
+typename vector<T>::iterator
+vector<T>::emplace(const_iterator pos, Args&& ...args)
+{
+    WSTL_DEBUG(pos >= begin() && pos <= end());
+    iterator xpos = const_cast<iterator>(pos);
+    const size_type n = xpos - begin_;
+    if(end_ != cap_ && xpos == end_) {
+        data_allocator::construct(wstl::address_of(*end_), wstl::forward<Args>(args)...);
+        ++end_;
+    }
+    else if(end_ != cap_) {
+        auto new_end = end_;
+        data_allocator::construct(wstl::address_of(*end_), *(end_-1));
+        ++new_end;
+        wstl::copy_backward(xpos, end_ - 1, end_);
+        *xpos = value_type(wstl::forward<Args>(args)...);
+        end_ = new_end;
+    }
+    else {
+        reallocate_emplace(xpos, wstl::forward<Args>(args)...);
+    }
+    return begin() + n;
+}
+
+template <class T>
+typename vector<T>::iterator vector<T>::insert(const_iterator pos, const value_type& value)
+{
+    WSTL_DEBUG(pos >= begin() && pos <= end());
+    iterator xpos = const_cast<iterator>(pos);
+    const size_type n = pos - begin_;
+    if(end_ != cap_ && xpos == end_) {
+        data_allocator::construct(wstl::address_of(*end_), value);
+        ++end_;
+    }
+    else if(end_ != cap_) {
+        auto new_end = end_;
+        data_allocator::costruct(wstl::address_of(*end_), *(end_-1));
+        ++new_end;
+        auto value_copy = value;
+        wstl::copy_backward(xpos, end_-1, end_);
+        *xpos = wstl::move(value_copy);
+        end_ = new_end;
+    }
+    else {
+        reallocate_insert(xpos, value);
+    }
+    return begin_ + n;
+}
+
+template <class T>
 typename vector<T>::iterator
 vector<T>::erase(const_iterator pos) {
     WSTL_DEBUG(pos >= begin() && pos < end());
@@ -453,6 +556,23 @@ vector<T>::erase(const_iterator first, const_iterator last) {
     end_ = end_ - (last - first);
     return begin_ + n;
 }
+
+template <class T>
+typename vector<T>::size_type vector<T>::get_new_cap(size_type add_size)
+{
+    const auto old_size = capacity();
+    THROW_LENGTH_ERROR_IF(old_size > max_size() - add_size,
+                            "vector<T>'s size too big");
+    if(old_size > max_size() - old_size / 2) {
+        return old_size + add_size > max_size() - 16 ?
+                old_size + add_size : old_size + add_size + 16;
+    }
+    const size_type new_size = old_size == 0 ?
+                    wstl::max(add_size, static_cast<size_type>(16)) :
+                    wstl::max(old_size + old_size / 2, old_size + add_size);
+    return new_size;                    
+}
+
 
 template <class T>
 template <class IIter>
@@ -494,6 +614,150 @@ void vector<T>::copy_assign(FIter first, FIter last, forward_iterator_tag)
     }
 }
 
+template <class T>
+template <class... Args>
+void vector<T>::reallocate_emplace(iterator pos, Args&& ...args)
+{
+    const auto new_size = get_new_cap(1);
+    auto new_begin = data_allocator::allocate(new_size);
+    auto new_end = new_begin;
+    try
+    {
+        new_end = wstl::uninitialized_move(begin_, pos, new_begin);
+        data_allocator::construct(wstl::address_of(*new_end), wstl::forward<Args>(args)...);
+        ++new_end;
+        new_end = wstl::uninitialized_move(pos, end_, new_end);
+    }
+    catch(...)
+    {
+        data_allocator::deallocate(new_begin, new_size);
+        throw;
+    }
+
+    destroy_and_recovery(begin_, end_, cap_ - begin_);
+    begin_ = new_begin;
+    end_ = new_end;
+    cap_ = new_begin + new_size;    
+}
+
+template <class T>
+void vector<T>::reallocate_insert(iterator pos, const value_type& value)
+{
+    const auto new_size = get_new_cap(1);
+    auto new_begin = data_allocator::allocate(new_size);
+    auto new_end = new_begin;
+    const value_type& value_copy = value;
+    try
+    {
+        new_end = wstl::uninitialized_move(begin_, pos, new_begin);
+        data_allocator::construct(wstl::address_of(*new_end), value_copy);
+        ++new_end;
+        new_end = wstl::uninitialized_move(pos, end_, new_end);
+    }
+    catch(...)
+    {
+        data_allocator::deallocate(new_begin, new_size);
+        throw;
+    }
+    
+    destroy_and_recovery(begin_, end_, cap_ - begin_);
+    begin_ = new_begin;
+    end_ = new_end;
+    cap_ = new_begin + new_size;
+}
+
+template <class T>
+typename vector<T>::iterator 
+vector<T>::fill_insert(iterator pos, size_type n, const value_type& value)
+{
+    if(0 == n) return pos;
+    const size_type xpos = pos - begin_;
+    const value_type value_copy = value;
+    if(static_cast<size_type>(cap_ - end_) >= n) {
+        const size_type after_elems = end_ - pos;
+        auto old_end = end_;
+        if(after_elems > n) {
+            wstl::uninitialized_copy(end_ - n, end_, end_);
+            end_ += n;
+            wstl::move_backward(pos, old_end - n, old_end);
+            wstl::uninitialized_fill_n(pos, n, value_copy);
+        }
+        else {
+            end_ = wstl::uninitialized_fill_n(end_, n - after_elems, value_copy);
+            end_ = wstl::uninitialized_move(pos, old_end, end_);
+            wstl::uninitialized_fill_n(pos, after_elems, value_copy);
+
+        }
+    }
+    else {
+        const auto new_size = get_new_cap(1);
+        auto new_begin = data_allocator::allocate(new_size);
+        auto new_end = new_begin;
+        try
+        {
+            new_end = wstl::uninitialized_move(begin_, pos, new_begin);
+            new_end = wstl::uninitialized_fill_n(new_end, n, value);
+            new_end = wstl::uninitialized_move(pos, end_, new_end);
+        }
+        catch(...)
+        {
+            destroy_and_recovery(new_begin, new_end, new_size);
+            throw;
+        }
+        data_allocator::deallocate(begin_, cap_ - begin_);
+        begin_ = new_begin;
+        end_ = new_end;
+        cap_ = begin_ + new_size;
+    }
+    return begin_ + xpos;
+}
+
+template <class T>
+template <class IIter>
+void vector<T>::copy_insert(iterator pos, IIter first, IIter last)
+{
+    if(first == last) return;
+
+    const auto n = wstl::distance(first, last);
+    if((cap_ - end_) >= n) {
+        const auto after_elems = end_ - pos;
+        auto old_end = end_;
+        if(after_elems > n) {
+            end_ = wstl::uninitialized_copy(end_ - n, end_, end_);
+            wstl::move_backward(pos, old_end - n, old_end);
+            wstl::uninitialized_copy(first, last, pos);
+        }
+        else {
+            auto mid = first;
+            wstl::advance(mid, after_elems);
+            end_ = wstl::uninitialized_copy(mid, last, end_);
+            end_ = wstl::uninitialized_move(pos, old_end, end_);
+            wstl::uninitialized_copy(first, mid, pos);
+        }
+    }
+    else {
+        const auto new_size = get_new_cap(1);
+        auto new_begin = data_allocator::allocate(new_size);
+        auto new_end = new_begin;
+        try
+        {
+            new_end = wstl::uninitialized_move(begin_, pos, new_begin);
+            new_end = wstl::uninitialized_copy(first, last, new_end);
+            new_end = wstl::uninitialized_move(pos, end_, new_end);
+        }
+        catch(...)
+        {
+            destroy_and_recovery(new_begin, new_end, new_size);
+            throw;
+        }
+
+        data_allocator::deallocate(begin_, cap_ - begin_);
+        begin_ = new_begin;
+        end_ = new_end;
+        cap_ = begin_ + new_size;        
+    }
+}
+
 }   // namespace wstl
 #endif
 
@@ -506,4 +770,5 @@ void vector<T>::copy_assign(FIter first, FIter last, forward_iterator_tag)
  * [day05]: add some type of T
  *          add member function, [erase], [fill_assign]
  * [day06]: add member function, [assign], [copy_assign]
+ * [day07]: add member function, [emplace],[insert],[resize]
  */

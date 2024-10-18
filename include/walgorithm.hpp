@@ -144,6 +144,46 @@ void fill(ForwardIter first, ForwardIter last, const T& value)
     fill_cat(first, last, value, iterator_category(first));
 }
 
+template <class BidirectionalIter1, class BidirectionalIter2>
+BidirectionalIter2 unchecked_move_backward_cat(BidirectionalIter1 first, BidirectionalIter1 last,
+                                            BidirectionalIter2 result,wstl::bidirectional_iterator_tag)
+{
+    while (first != last)
+    {
+        *--result = wstl::move(*--last);
+    }
+    return result;    
+}
+
+template <class BidirectionalIter1, class BidirectionalIter2>
+BidirectionalIter2 unchecked_move_backward(BidirectionalIter1 first,
+                                            BidirectionalIter1 last,
+                                            BidirectionalIter2 result)
+{
+    return unchecked_move_backward_cat(first, last, result, iterator_category(first));
+}
+
+template <class Tp, class Up>
+typename std::enable_if<std::is_same<typename std::remove_const<Tp>::type,Up>::value
+                        && std::is_trivially_move_assignable<Up>::value,Up*>::type
+unchecked_move_backward(Tp* first, Tp* last, Up* result)
+{
+    const size_t n = static_cast<size_t>(last - first);
+    if(0 != n) {
+        result -= n;
+        std::memmove(result, first, n*sizeof(Up));
+    }
+    return result;
+}
+
+template <class BidirectionalIter1, class BidirectionalIter2>
+BidirectionalIter2 move_backward(BidirectionalIter1 first,
+                                BidirectionalIter1 last,
+                                BidirectionalIter2 result)
+{
+    return unchecked_move_backward(first, last, result);
+}
+
 template <class Tp, class Up>
 typename std::enable_if<
     std::is_same<typename std::remove_const<Tp>::type, Up>::value &&
@@ -151,11 +191,17 @@ typename std::enable_if<
     Up*>::type
 unchecked_move(Tp* first, Tp* last, Up* result)
 {
-    const size_t n = static_cast<size_t>(last - result);
+    const size_t n = static_cast<size_t>(last - first);
     if(0 != n) {
         std::memmove(result, first, n * sizeof(Up));
     }
     return result + n;
+}
+
+template <class InputIter, class OutputIter>
+OutputIter unchecked_move(InputIter first, InputIter last, OutputIter result)
+{
+    return unchecked_copy_cat(first, last, result, iterator_category(first));
 }
 
 // move
@@ -163,6 +209,56 @@ template <class InputIter, class OutputIter>
 OutputIter move(InputIter first, InputIter last, OutputIter result)
 {
     return unchecked_move(first, last, result);
+}
+
+template <class BidirectioanlIter1, class BidirectioanlIter2>
+BidirectioanlIter2 unchecked_copy_backward_cat(BidirectioanlIter1 first, BidirectioanlIter1 last,
+                                              BidirectioanlIter2 result, wstl::bidirectional_iterator_tag)
+{
+    while (first != last)
+    {
+        *--result = *--last;
+    }
+    return result;
+}
+
+template <class RandomIter1, class BidirectionalIter2>
+BidirectionalIter2 unchecked_copy_backward_cat(RandomIter1 first, RandomIter1 last,
+                                                BidirectionalIter2 result, wstl::random_access_iterator_tag)
+{
+    for(auto n = last - first; n > 0; --n) {
+        *--result = *--last;
+    }
+    return result;
+}
+
+template <class BidirectionalIter1, class BidirectionalIter2>
+BidirectionalIter2 unchecked_copy_backward(BidirectionalIter1 first
+                                        , BidirectionalIter1 last
+                                        , BidirectionalIter2 result)
+{
+    return unchecked_copy_backward_cat(first, last, result, iterator_category(first));
+}
+
+template <class Tp, class Up>
+typename std::enable_if<std::is_same<typename std::remove_const<Tp>::type,Up>::value
+                        && std::is_trivially_copy_assignable<Up>::value, Up*>::type
+unchecked_copy_backward(Tp* first, Tp* last, Up* result)
+{
+    const auto n = static_cast<size_t>(last - first);
+    if(0 != n) {
+        result -= n;
+        std::memmove(result, first, n * sizeof(Up));
+    }
+    return result;
+}
+
+template <class BidirectionalIter1, class BidirectionalIter2>
+BidirectionalIter2 copy_backward(BidirectionalIter1 first
+                                , BidirectionalIter1 last
+                                , BidirectionalIter2 result)
+{
+    return unchecked_copy_backward(first, last, result);
 }
 
 }   // namespace wstl
