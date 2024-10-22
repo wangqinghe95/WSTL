@@ -49,6 +49,7 @@ private:
 
 public:
     vector() noexcept {
+        LOGD("vector()");
         try_init();
     }
     explicit vector(size_type n) {
@@ -57,21 +58,25 @@ public:
          * then value_type() is the default value for char, int, float
          * or value is a self-define data type, it will call construct of value
          */
+        LOGD("vector(size_type n)");
         fill_init(n, value_type());
     }
 
     vector(size_type n, const value_type& value) {
+        LOGD("vector(size_type n, const value_type& value)");
         fill_init(n, value);
     }
 
     template <class Iter, typename std::enable_if<
             wstl::is_input_iterator<Iter>::value,int>::type = 0>
     vector(Iter first, Iter last) {
+        LOGD("vector(Iter first, Iter last)");
         WSTL_DEBUG(!(first > last));
         range_init(first, last);
     }
 
     vector(const vector& rhs) {
+        LOGD("vector(const vector& rhs)");
         range_init(rhs.begin_, rhs.end_);
     }
 
@@ -79,12 +84,14 @@ public:
                                  , end_(rhs.end_)
                                  , cap_(rhs.cap_)
     {
+        LOGD("vector(vector&& rhs)");
         rhs.begin_ = nullptr;
         rhs.end_ = nullptr;
         rhs.cap_ = nullptr;
     }
 
     vector(std::initializer_list<value_type> _list) {
+        LOGD("vector(std::initializer_list<value_type> _list)");
         range_init(_list.begin(), _list.end());
     }
 
@@ -93,6 +100,7 @@ public:
     vector& operator=(vector&& rhs) noexcept;
 
     vector& operator=(std::initializer_list<value_type> _list) {
+        LOGD("operator=(std::initializer_list<value_type> _list)");
         vector tmp(_list.begin(), _list.end());
         swap(tmp);
         return *this;        
@@ -106,9 +114,11 @@ public:
 public:
     // iterator related operation
     iterator begin() noexcept {
+        // LOGI("begin");
         return begin_;
     }
     const_iterator begin() const noexcept {
+        // LOGI("const_iterator begin");
         return begin_;
     }
     iterator end() noexcept {
@@ -164,8 +174,7 @@ public:
         return static_cast<size_type>(cap_ - begin_); 
     }
 
-    void reverse(size_type n);
-    void shrink_to_fit();
+    void reserve(size_type n);
 
     // visit element related function
     reference operator[](size_type n) {
@@ -174,6 +183,7 @@ public:
     }
 
     const reference operator[](size_type n) const {
+        LOGD("const operator[]");
         WSTL_DEBUG(n < size());
         return *(begin_ + n);
     }
@@ -277,7 +287,6 @@ private:
     template <class Iter>
     void    range_init(Iter first, Iter last);
     void    destroy_and_recovery(iterator first, iterator last, size_type n);
-    void    reinsert(size_type size);
     void    fill_assign(size_type n, const value_type& value);
 
     // calculate the growth size
@@ -297,11 +306,16 @@ private:
     iterator    fill_insert(iterator pos, size_type n, const value_type& value);
     template <class IIter>
     void        copy_insert(iterator pos, IIter first, IIter last);
+
+    void    shrink_to_fit();
+    void    reinsert(size_type size);
+
 };
 
 template <class T>
 vector<T>& vector<T>::operator=(const vector& rhs)
 {
+    LOGD("operator=");
     if(this != &rhs) {
         const auto len = rhs.size();
         if(len > capacity()) {
@@ -325,6 +339,7 @@ vector<T>& vector<T>::operator=(const vector& rhs)
 template <class T>
 vector<T>& vector<T>::operator=(vector&& rhs) noexcept
 {
+    LOGD("operator=(vector&& rhs)");
     destroy_and_recovery(begin_, end_, cap_ - begin_);
     begin_ = rhs.begin_;
     end_ = rhs.end_;
@@ -444,11 +459,11 @@ void vector<T>::reinsert(size_type size)
 }
 
 template <class T>
-void vector<T>::reverse(size_type n)
+void vector<T>::reserve(size_type n)
 {
     if(capacity() < n) {
         THROW_LENGTH_ERROR_IF(n > max_size(), 
-            "n can't larger than max_size() in vector<T>::reverse(n)");
+            "n can't larger than max_size() in vector<T>::reserve(n)");
         const auto old_size = size();
         auto tmp = data_allocator::allocate(n);
         wstl::uninitialized_move(begin_, end_, tmp);

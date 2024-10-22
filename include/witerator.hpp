@@ -378,6 +378,20 @@ public:
     }
 };
 
+template <class Iterator>
+bool operator==(const reverse_iterator<Iterator>& lhs,
+                const reverse_iterator<Iterator>& rhs)
+{
+    return lhs.base() == rhs.base();
+}
+
+template <class Iterator>
+bool operator!=(const reverse_iterator<Iterator>& lhs,
+                const reverse_iterator<Iterator>& rhs)
+{
+    return !(lhs == rhs);
+}
+
 template <class InputIterator, class Distance>
 void advance_dispatch(InputIterator& i, Distance n, input_iterator_tag)
 {
