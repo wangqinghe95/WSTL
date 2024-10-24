@@ -246,6 +246,17 @@ public:
     template <class... Args>
     iterator emplace(const_iterator pos, Args&& ...args);
 
+    template <class... Args>
+    void emplace_back(Args&& ...args);
+
+    // push_back / pop_back
+    void push_back(const value_type& value);
+    void push_back(value_type& value) {
+        emplace_back(wstl::move(value));
+    }
+
+    void pop_back();
+
     // insert
     iterator insert(const_iterator pos, const value_type& value);
     iterator insert(const_iterator pos, value_type&& value) {
@@ -369,12 +380,6 @@ void vector<T>::swap(vector<T>& rhs) noexcept
         wstl::swap(end_, rhs.end_);
         wstl::swap(cap_, rhs.cap_);
     }
-}
-
-template <class T>
-void swap(vector<T>& lhs, vector<T>& rhs)
-{
-    lhs.swap(rhs);
 }
 
 template <class T>
@@ -523,6 +528,39 @@ vector<T>::emplace(const_iterator pos, Args&& ...args)
         reallocate_emplace(xpos, wstl::forward<Args>(args)...);
     }
     return begin() + n;
+}
+
+template <class T>
+template <class... Args>
+void vector<T>::emplace_back(Args&& ...args)
+{
+    if(end_ < cap_) {
+        data_allocator::construct(wstl::address_of(*end_), wstl::forward<Args>(args)...);
+        ++end_;
+    }
+    else {
+        reallocate_emplace(end_, wstl::forward<Args>(args)...);
+    }
+}
+
+template <class T>
+void vector<T>::push_back(const value_type& value)
+{
+    if(end_ != cap_) {
+        data_allocator::construct(wstl::address_of(*end_), value);
+        ++end_;
+    }
+    else {
+        reallocate_insert(end_, value);
+    }
+}
+
+template <class T>
+void vector<T>::pop_back()
+{
+    WSTL_DEBUG(!empty());
+    data_allocator::destroy(end_ - 1);
+    --end_;
 }
 
 template <class T>
@@ -771,6 +809,52 @@ void vector<T>::copy_insert(iterator pos, IIter first, IIter last)
         end_ = new_end;
         cap_ = begin_ + new_size;        
     }
+}
+
+/******************************************* */
+// overload operator
+
+template <class T>
+bool operator==(const vector<T>& lhs, const vector<T>& rhs)
+{
+    return lhs.size() == rhs.size() &&
+        wstl::equal(lhs.begin(), lhs.end(), rhs.begin());
+}
+
+template <class T>
+bool operator<(const vector<T>& lhs, const vector<T>& rhs)
+{
+    return wstl::lexicographical_compare(lhs.begin(), lhs.end(), rhs.begin(), rhs.end());
+}
+
+template <class T>
+bool operator!=(const vector<T>& lhs, const vector<T>& rhs)
+{
+    return !(lhs == rhs);
+}
+
+template <class T>
+bool operator>(const vector<T>& lhs, const vector<T>& rhs)
+{
+    return rhs < lhs;
+}
+
+template <class T>
+bool operator<=(const vector<T>& lhs, const vector<T>& rhs)
+{
+    return !(rhs < lhs);
+}
+
+template <class T>
+bool operator>=(const vector<T>& lhs, const vector<T>& rhs)
+{
+    return !(lhs < rhs);
+}
+
+template <class T>
+void swap(vector<T>& lhs, vector<T>& rhs)
+{
+    lhs.swap(rhs);
 }
 
 }   // namespace wstl

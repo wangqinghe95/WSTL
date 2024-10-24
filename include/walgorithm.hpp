@@ -42,6 +42,18 @@ const T& max(const T& lhs, const T& rhs, Compare comp)
     return comp(lhs, rhs) ? rhs : lhs;
 }
 
+template <class T>
+const T& min(const T& lhs, const T& rhs)
+{
+    return rhs < lhs ? rhs : lhs;
+}
+
+template <class T, class Compare>
+const T& min(const T& lhs, const T& rhs, Compare comp)
+{
+    return comp(rhs, lhs) ? rhs : lhs;
+}
+
 template <class Tp, class Size, class Up>
 typename std::enable_if<
     std::is_integral<Tp>::value && sizeof(Tp) == 1 && 
@@ -259,6 +271,70 @@ BidirectionalIter2 copy_backward(BidirectionalIter1 first
                                 , BidirectionalIter2 result)
 {
     return unchecked_copy_backward(first, last, result);
+}
+
+/****************** */
+
+template <class InputIter1, class InputIter2>
+bool equal(InputIter1 first1, InputIter1 last1, InputIter2 first2)
+{
+    for(; first1 != last1; ++first1, ++first2) {
+        if(*first1 != *first2) {
+            return false;
+        }
+    }
+    return true;
+}
+
+template <class InputIter1, class InputIter2, class Compared>
+bool equal(InputIter1 first1, InputIter2 last1, InputIter2 first2, Compared comp)
+{
+    for(; first1 != last1; ++first1, ++first2) {
+        if(!comp(*first1, *first2)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
+ * lexicographical_compare
+ * sort two sequence according to lexicographical
+ */
+template <class InputIter1, class InputIter2>
+bool lexicographical_compare(InputIter1 first1, InputIter1 last1,
+                            InputIter2 first2, InputIter2 last2)
+{
+    for(; first1 != last1 && first2 != last2; ++first1, ++first2) {
+        if(*first1 < *first2) return true;
+        if(*first2 < *first1) return false;
+    }
+
+    return first1 == last1 && first2 != last2;
+}
+
+template <class InputIter1, class InputIter2, class Compared>
+bool lexicographical_compare(InputIter1 first1, InputIter1 last1,
+                            InputIter2 first2, InputIter2 last2, Compared comp)
+{
+    for(; first1 != last1 && first2 != last2; ++first1, ++first2) {
+        if(comp(*first1 < *first2)) return true;
+        if(comp(*first2 < *first1)) return false;
+    }
+
+    return first1 == last1 && first2 != last2;
+}
+
+template <class InputIter1, class InputIter2, class Compred>
+bool lexicographical_compare(const unsigned char* first1,
+                            const unsigned char* last1,
+                            const unsigned char* first2,
+                            const unsigned char* last2)
+{
+    const auto len1 = last1 - first1;
+    const auto len2 = last2 - first2;
+    const auto result = std::memcmp(first1, first2, wstl::min(len1,len2));
+    return result != 0 ? result < 0 : len1 < len2;
 }
 
 }   // namespace wstl

@@ -50,7 +50,7 @@ public:
         if(log_level < SHOW_LEVEL) return;
         std::ostringstream oss;
         oss << getCurrentTime() << getLogLevel(log_level);
-        oss << "[" << log_file << ":" << log_line << " " << log_func << "]";
+        oss << "[" << log_file << ":" << log_line << " " << log_func << "] ";
         print_helper_C11(oss, args...);
         std::cout << oss.str();
     }
