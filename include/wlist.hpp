@@ -4,6 +4,9 @@
 #include "witerator.hpp"
 #include "wallocator.hpp"
 #include "wmemory.hpp"
+#include "utils.hpp"
+#include "wconstruct.hpp"
+#include "walgorithm.hpp"
 
 namespace wstl
 {
@@ -67,6 +70,63 @@ struct list_node_base
 };
 
 template <class T>
+struct list_iterator : public wstl::iterator<wstl::bidirectional_iterator_tag,T>
+{
+    typedef T                                       value_type;
+    typedef T*                                      pointer;
+    typedef T&                                      reference;
+    typedef typename node_traits<T>::base_ptr       base_ptr;
+    typedef typename node_traits<T>::node_ptr       node_ptr;
+    typedef list_iterator<T>                        self;
+
+    base_ptr node_;
+
+    list_iterator() = default;
+    list_iterator(base_ptr p) : node_(p){}
+    list_iterator(node_ptr p) : node_(p->as_base()){}
+    list_iterator(const node_ptr& rhs) : node_(rhs.node_){}
+    
+    reference operator*() const {
+        return node_->as_node()->value;
+    }
+
+    pointer operator->() const {
+        return &(operator*());
+    }
+
+    self& operator++() {
+        WSTL_DEBUG(node_ != nullptr);
+        node_ = node_->next;
+        return *this;
+    }
+
+    self& operator++(int) {
+        self tmp = *this;
+        ++*this;
+        return tmp;
+    }
+
+    self& operator--() {
+        WSTL_DEBUG(node_ != nullptr);
+        node_ = node_->prev;
+        return *this;
+    }
+
+    self& operator--(int) {
+        self tmp = *this;
+        --*this;
+        return tmp;
+    }
+
+    bool operator==(const self& rhs) const {
+        return node_ == rhs.node_;
+    }
+    bool operator!=(const self& rhs) const {
+        return node_ != rhs.node_;
+    }
+};
+
+template <class T>
 class list
 {
 public:
@@ -78,6 +138,9 @@ public:
     typedef typename allocator_type::value_type     value_type;
     typedef typename allocator_type::size_type      size_type;
 
+    typedef list_iterator<T>                        iterator;
+    typedef wstl::reverse_iterator<iterator>        reverse_iterator;
+
     typedef typename node_traits<T>::base_ptr       base_ptr;
     typedef typename node_traits<T>::node_ptr       node_ptr;
 private:
@@ -88,12 +151,35 @@ public:
         fill_init(0, value_type());
     }
 
+    explicit list(size_type n) {
+        fill_init(n, value_type());
+    }
+
+    list(size_type n, const T& value) {
+        fill_init(n, value);
+    }
+
+    // template <class Iter, typename std::enable_if<
+    //     wstl::is_input_iterator<Iter>::value, int>::type = >
+    // list(Iter first, Iter last) {
+    //     copy_init(first, last);
+    // }
+
     // erase / clear
     void    clear();
 
     // capacity
+    bool empty() const noexcept {
+        return node_->next == node_;
+    }
+
     size_type size() {
         return size_;
+    }
+
+    // iterator
+    iterator begin() noexcept {
+        return node_->next;
     }
 
 private:
@@ -118,7 +204,7 @@ typename list<T>::node_ptr list<T>::create_node(Args&& ...args)
     node_ptr p = node_allocator::allocate(1);
     try
     {
-        data_allocator::construct(wstl::address_of(p->va),wstl::forward(args)...);
+        data_allocator::construct(wstl::address_of(p->value), wstl::forward<Args>(args)...);
         p->prev = nullptr;
         p->next = nullptr;
     }

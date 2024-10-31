@@ -16,6 +16,7 @@
 #include <string>
 
 #include "logger.hpp"
+#include "wexcepdef.hpp"
 
 namespace wstl
 {

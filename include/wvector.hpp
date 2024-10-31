@@ -15,7 +15,6 @@
 #include "walgorithm.hpp"
 #include "utils.hpp"
 #include "uninitialized.hpp"
-#include "wexcepdef.hpp"
 #include "wconstruct.hpp"
 #include "wmemory.hpp"
 #include "witerator.hpp"
