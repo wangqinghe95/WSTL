@@ -13,7 +13,7 @@ public:
     }
 
     TestClass(int v) : num(v){
-        LOGI(DEBUG_DATE);
+        // LOGI(DEBUG_DATE);
     }
 
     friend std::ostream& operator<<(std::ostream& os, const TestClass& _class);
