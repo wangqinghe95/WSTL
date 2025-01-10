@@ -100,7 +100,7 @@ struct list_iterator : public wstl::iterator<wstl::bidirectional_iterator_tag,T>
         return *this;
     }
 
-    self& operator++(int) {
+    self operator++(int) {
         self tmp = *this;
         ++*this;
         return tmp;
@@ -611,7 +611,7 @@ void list<T>::link_nodes(base_ptr pos, base_ptr first, base_ptr last)
 template <class T>
 void list<T>::unlink_nodes(base_ptr first, base_ptr last)
 {
-    first->prev->prev = last->next;
+    first->prev->next = last->next;
     last->next->prev = first->prev;
 }
 

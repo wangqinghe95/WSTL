@@ -43,7 +43,11 @@ void testClear()
 {
     wstl::list<int> my_list = {1,2,3,4,5};
 
-    // error
+    for(auto it = my_list.begin(); my_list.end() != it; it++) {
+        LOGI(*it);
+    }
+
+    LOGI("my_list.begin():", *my_list.begin() );
     my_list.erase(my_list.begin());
     LOGI("my_list.begin():", *my_list.begin() );
     LOGI("my_list.size():", my_list.size() );
