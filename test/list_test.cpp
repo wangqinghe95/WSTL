@@ -85,10 +85,26 @@ void testResize()
     LOGI("test resize passed!");
 }
 
+void testAssign()
+{
+    wstl::list<int> list_test;
+    assert(list_test.size() == 0 && "list_size error");
+    list_test.assign(5, 1);
+    assert (list_test.size() == 5 && (list_test.back()) == 1 && "list assign(number,value) error");
+    
+    wstl::list<int> list_test_1{6,7,8,9,10};
+    wstl::list<int> list_test_2;
+    list_test_2.assign(list_test_1.begin(), list_test_1.end());
+    assert(list_test_2.size() == 5 && (list_test_2.back()) == 10 && "list assign(iterator) error");
+
+    LOGI("test assign passed!");
+}
+
 int main()
 {
     testConstrucotr();
     testClear();
     testResize();
+    testAssign();
     return 0;
 }

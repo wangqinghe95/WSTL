@@ -316,6 +316,9 @@ public:
     }
 
     // resize list size func
+    void assign(size_type n, const value_type& value) {
+        fill_assign(n, value);
+    }
     template <class Iter, typename std::enable_if<
         wstl::is_input_iterator<Iter>::value, int>::type = 0>
     void assign(Iter first, Iter last) {
@@ -341,6 +344,7 @@ private:
     // assign
     template <class Iter>
     void    copy_assign(Iter first, Iter last);
+    void fill_assign(size_type n, const value_type& value);
     
     // insert
     iterator    fill_insert(const_iterator pos, size_type n, const value_type& value);
@@ -516,6 +520,23 @@ void list<T>::copy_init(Iter first, Iter last)
         base_allocator::deallocate(node_);
         node_ = nullptr;
         throw;
+    }
+}
+
+template <class T>
+void list<T>::fill_assign(size_type n, const value_type& value)
+{
+    auto i = begin();
+    auto e = end();
+    for(; i != e && n > 0; ++i, --n) {
+        *i = value;
+    }
+
+    if(n > 0) {
+        insert(e, n, value);
+    }
+    else {
+        erase(i, e);
     }
 }
 
