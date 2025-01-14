@@ -42,23 +42,53 @@ void testConstrucotr()
 void testClear()
 {
     wstl::list<int> my_list = {1,2,3,4,5};
+    wstl::list<int> my_list_copy = my_list;
 
     for(auto it = my_list.begin(); my_list.end() != it; it++) {
-        LOGI(*it);
+        // LOGI(*it);
     }
 
-    LOGI("my_list.begin():", *my_list.begin() );
+    // LOGI("my_list.begin():", *my_list.begin() );
     my_list.erase(my_list.begin());
-    LOGI("my_list.begin():", *my_list.begin() );
-    LOGI("my_list.size():", my_list.size() );
+    // LOGI("my_list.begin():", *my_list.begin() );
+    // LOGI("my_list.size():", my_list.size() );
     assert(*my_list.begin()  == 2 && "my_list erase error");
 
+    my_list.erase(my_list.begin(), my_list.end());
+    assert(my_list.size() == 0 && "my_list erase all error");
+
+    my_list_copy.clear();
+    assert(my_list_copy.size() == 0 && "my_list_copy clear error");
+
     LOGI("test clear passed!");
+}
+
+void testResize()
+{
+    wstl::list<int> list_test{1,2,3,4,5};
+    assert(list_test.size() == 5 && "list_size error");
+
+    list_test.resize(4);
+    assert(list_test.size() == 4 && "list resize narrow error");
+
+    list_test.resize(6);
+    assert(list_test.size() == 6 && (list_test.back()) == 0 && "list resize large error");
+
+    wstl::list<int> list_test_1{1,2,3,4,5};
+    list_test_1.resize(4, 1);
+
+    assert(list_test_1.size() == 4 && (list_test_1.back()) == 4 && "list resize narrow error");
+
+    list_test_1.resize(6, 2);
+    assert(list_test_1.size() == 6 && (list_test_1.back()) == 2 && "list resize large with number error");
+
+    LOGI("test resize passed!");
 }
 
 int main()
 {
     testConstrucotr();
     testClear();
+    testResize();
     return 0;
 }

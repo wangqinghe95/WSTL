@@ -130,8 +130,8 @@ template <class T>
 struct list_const_iterator : public wstl::iterator<wstl::bidirectional_iterator_tag,T>
 {
     typedef T                                       value_type;
-    typedef const T*                                      pointer;
-    typedef const T&                                      reference;
+    typedef const T*                                pointer;
+    typedef const T&                                reference;
     typedef typename node_traits<T>::base_ptr       base_ptr;
     typedef typename node_traits<T>::node_ptr       node_ptr;
     typedef list_const_iterator<T>                  self;
@@ -195,6 +195,11 @@ public:
 
     typedef typename allocator_type::value_type     value_type;
     typedef typename allocator_type::size_type      size_type;
+    typedef typename allocator_type::pointer        pointer;
+    typedef typename allocator_type::const_pointer  const_pointer;
+    typedef typename allocator_type::reference      reference;
+    typedef typename allocator_type::const_reference const_reference;
+    typedef typename allocator_type::difference_type difference_type;
 
     typedef list_iterator<T>                        iterator;
     typedef list_const_iterator<T>                  const_iterator;
@@ -250,10 +255,52 @@ public:
 
     }
 
+public:
+    // iterator related
+    iterator begin() noexcept {
+        return node_->next;
+    }
+    const_iterator begin() const noexcept {
+        return node_->next;
+    }
+    
+    iterator end() noexcept{
+        return node_;
+    }
+
+    const_iterator end() const noexcept{
+        return node_;
+    }
+
+    const_iterator cbegin() const noexcept {
+        return begin();
+    }
+
+    const_iterator cend() const noexcept {
+        return end();
+    }
+
+    reference back() {
+        WSTL_DEBUG(!empty());
+        return *(--end());
+    }
+
+    const_reference back() const {
+        WSTL_DEBUG(!empty());
+        return *(--end());
+    }
+
     // erase / clear
     iterator erase(const_iterator pos);
     iterator erase(const_iterator first, const_iterator last);
     void    clear();
+
+    // resize
+    void    resize(size_type new_size) {
+        resize(new_size, value_type());
+    }
+
+    void    resize(size_type new_size, const value_type& value);
 
     // capacity
     bool empty() const noexcept {
@@ -266,30 +313,6 @@ public:
 
     size_type size() {
         return size_;
-    }
-
-    // iterator
-    iterator begin() noexcept {
-        return node_->next;
-    }
-    const_iterator begin() const noexcept {
-        return node_->next;
-    }
-
-    iterator end() noexcept {
-        return node_;
-    }
-
-    const_iterator end() const noexcept {
-        return node_;
-    }
-
-    const_iterator cbegin() const noexcept {
-        return begin();
-    }
-
-    const_iterator cend() const noexcept {
-        return end();
     }
 
     // resize list size func
@@ -427,6 +450,26 @@ void list<T>::clear()
         node_->unlink();
         size_ = 0;
     }
+}
+
+template <class T>
+void list<T>::resize(size_type new_size, const value_type& value)
+{
+    auto i = begin();
+    size_type len = 0;
+    while (i != end() && len < new_size)
+    {
+        ++i;
+        ++len;
+    }
+
+    if(len == new_size) {
+        erase(i, node_);
+    }
+    else {
+        insert(node_, new_size - len, value);
+    }
+    
 }
 
 template <class T>
