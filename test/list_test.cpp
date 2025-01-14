@@ -100,11 +100,33 @@ void testAssign()
     LOGI("test assign passed!");
 }
 
+void testEmplace()
+{
+    wstl::list<int> list_test {1,2,3,4,5};
+    list_test.emplace(list_test.begin(), 6);
+    assert(list_test.size() == 6 && *list_test.begin() == 6 && "list emplace begin() error");
+
+    list_test.emplace_back(7);
+    assert(list_test.size() == 7 && list_test.back() == 7 && "list emplace_back() error");
+
+    list_test.emplace_front(8);
+    assert(list_test.size() == 8 && *list_test.begin() == 8 && "list emplace_front() error");
+
+    LOGI("test emplace passed!");
+}
+
+void testPush()
+{
+    
+}
+
 int main()
 {
     testConstrucotr();
     testClear();
     testResize();
     testAssign();
+    testEmplace();
+    testPush();
     return 0;
 }

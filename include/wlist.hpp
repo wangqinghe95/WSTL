@@ -329,6 +329,55 @@ public:
         copy_assign(ilist.begin(), ilist.end());
     }
 
+    // push_back / push_front
+    void push_front(const value_type& value) {
+        THROW_LENGTH_ERROR_IF(size_ > max_size() - 1, "list<T>'s size too big");
+        auto link_node = create_node(value);
+        link_nodes_at_front(link_node->as_base(), link_node->as_base());
+        ++size_;
+    }
+
+    void push_front(value_type&& value) {
+        emplace_front(wstl::move(value));
+    }
+
+    void push_back(const value_type& value) {
+        THROW_LENGTH_ERROR_IF(size_ > max_size() - 1, "list<T>'s size too big");
+        auto link_node = create_node(value);
+        link_nodes_at_back(link_node->as_base(), link_node->as_base());
+        ++size_;
+    }
+
+    void push_back(value_type&& value) {
+        emplace_back(wstl::move(value));
+    }
+
+    // emplace_front / emplace_back /  emplace
+    template <class ...Args>
+    void emplace_front(Args&& ...args) {
+        THROW_LENGTH_ERROR_IF(size_ > max_size() - 1, "list<T>'s size too big");
+        auto link_node = create_node(wstl::forward<Args>(args)...);
+        link_nodes_at_front(link_node->as_base(), link_node->as_base());
+        ++size_;
+    }
+
+    template <class ...Args>
+    void emplace_back(Args&& ...args) {
+        THROW_LENGTH_ERROR_IF(size_ > max_size() - 1, "list<T>'s size too big");
+        auto link_node = create_node(wstl::forward<Args>(args)...);
+        link_nodes_at_back(link_node->as_base(), link_node->as_base());
+        ++size_;
+    }
+
+    template <class ...Args>
+    iterator emplace(const_iterator pos, Args&& ...args) {
+        THROW_LENGTH_ERROR_IF(size_ > max_size() - 1, "list<T>'s size too big");
+        auto link_node = create_node(wstl::forward<Args>(args)...);
+        link_nodes(pos.node_, link_node->as_base(), link_node->as_base());
+        ++size_;
+        return iterator(link_node);
+    }
+
 private:
 
     // create / destroy
