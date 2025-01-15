@@ -337,6 +337,16 @@ bool lexicographical_compare(const unsigned char* first1,
     return result != 0 ? result < 0 : len1 < len2;
 }
 
+template <class InputIter, class T>
+InputIter find(InputIter first, InputIter last, const T& value)
+{
+    while (first != last && *first != value)
+    {
+        ++first;
+    }
+    return first;
+}
+
 }   // namespace wstl
 
 #endif

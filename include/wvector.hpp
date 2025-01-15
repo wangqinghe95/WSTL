@@ -250,7 +250,7 @@ public:
 
     // push_back / pop_back
     void push_back(const value_type& value);
-    void push_back(value_type& value) {
+    void push_back(value_type&& value) {
         emplace_back(wstl::move(value));
     }
 

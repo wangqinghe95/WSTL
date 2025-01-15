@@ -252,7 +252,14 @@ public:
 
     list& operator=(list&& rhs) noexcept {
         clear();
+        splice(end(), rhs);
+        return *this;
+    }
 
+    list& operator=(std::initializer_list<T> ilist) {
+        list tmp(ilist.begin(), ilist.end());
+        swap(tmp);
+        return *this;
     }
 
 public:
@@ -280,6 +287,16 @@ public:
         return end();
     }
 
+    reference front() {
+        WSTL_DEBUG(!empty());
+        return *begin();
+    }
+
+    const_reference front() const {
+        WSTL_DEBUG(!empty());
+        return *begin();
+    }
+
     reference back() {
         WSTL_DEBUG(!empty());
         return *(--end());
@@ -301,6 +318,11 @@ public:
     }
 
     void    resize(size_type new_size, const value_type& value);
+
+    void swap(list& rhs) noexcept {
+        wstl::swap(node_, rhs.node_);
+        wstl::swap(size_, rhs.size_);
+    }
 
     // capacity
     bool empty() const noexcept {
@@ -352,6 +374,22 @@ public:
         emplace_back(wstl::move(value));
     }
 
+    void pop_back() {
+        WSTL_DEBUG(!empty());
+        auto n = node_->prev;
+        unlink_nodes(n,n);
+        destroy_node(n->as_node());
+        --size_;
+    }
+
+    void pop_front() {
+        WSTL_DEBUG(!empty());
+        auto n = node_->next;
+        unlink_nodes(n,n);
+        destroy_node(n->as_node());
+        --size_;
+    }
+
     // emplace_front / emplace_back /  emplace
     template <class ...Args>
     void emplace_front(Args&& ...args) {
@@ -377,6 +415,12 @@ public:
         ++size_;
         return iterator(link_node);
     }
+
+    // list other operation
+
+    void splice(const_iterator pos, list& other);
+    void splice(const_iterator pos, list& other, const_iterator it);
+    void splice(const_iterator pos, list& other, const_iterator first, const_iterator last);
 
 private:
 
@@ -462,67 +506,6 @@ void list<T>::destroy_node(node_ptr p)
 {
     data_allocator::destroy(wstl::address_of(p->value));
     node_allocator::deallocate(p);
-}
-
-template <class T>
-typename list<T>::iterator list<T>::erase(const_iterator pos)
-{
-    WSTL_DEBUG(pos != cend());
-    auto n = pos.node_;
-    auto next = n->next;
-    unlink_nodes(n,n);
-    destroy_node(n->as_node());
-    --size_;
-    return iterator(next);
-}
-
-template <class T>
-typename list<T>::iterator list<T>::erase(const_iterator first, const_iterator last)
-{
-    if(first != last) {
-        unlink_nodes(first.node_, last.node_->prev);
-        while (first != last)
-        {
-            auto cur = first.node_;
-            ++first;
-            destroy_node(cur->as_node());
-            --size_;
-        }
-    }
-    return iterator(last.node_);
-}
-
-template <class T>
-void list<T>::clear()
-{
-    if(size_ != 0) {
-        auto cur = node_->next;
-        for(base_ptr next = cur->next; cur != node_; cur = next, next = cur->next) {
-            destroy_node(cur->as_node());
-        }
-        node_->unlink();
-        size_ = 0;
-    }
-}
-
-template <class T>
-void list<T>::resize(size_type new_size, const value_type& value)
-{
-    auto i = begin();
-    size_type len = 0;
-    while (i != end() && len < new_size)
-    {
-        ++i;
-        ++len;
-    }
-
-    if(len == new_size) {
-        erase(i, node_);
-    }
-    else {
-        insert(node_, new_size - len, value);
-    }
-    
 }
 
 template <class T>
@@ -730,6 +713,141 @@ void list<T>::unlink_nodes(base_ptr first, base_ptr last)
 
 /*************** private ***************/
 
+/**************public **************/
+
+template <class T>
+typename list<T>::iterator list<T>::erase(const_iterator first, const_iterator last)
+{
+    if(first != last) {
+        unlink_nodes(first.node_, last.node_->prev);
+        while (first != last)
+        {
+            auto cur = first.node_;
+            ++first;
+            destroy_node(cur->as_node());
+            --size_;
+        }
+    }
+    return iterator(last.node_);
 }
+
+template <class T>
+typename list<T>::iterator list<T>::erase(const_iterator pos)
+{
+    WSTL_DEBUG(pos != cend());
+    auto n = pos.node_;
+    auto next = n->next;
+    unlink_nodes(n,n);
+    destroy_node(n->as_node());
+    --size_;
+    return iterator(next);
+}
+
+template <class T>
+void list<T>::clear()
+{
+    if(size_ != 0) {
+        auto cur = node_->next;
+        for(base_ptr next = cur->next; cur != node_; cur = next, next = cur->next) {
+            destroy_node(cur->as_node());
+        }
+        node_->unlink();
+        size_ = 0;
+    }
+}
+
+template <class T>
+void list<T>::resize(size_type new_size, const value_type& value)
+{
+    auto i = begin();
+    size_type len = 0;
+    while (i != end() && len < new_size)
+    {
+        ++i;
+        ++len;
+    }
+
+    if(len == new_size) {
+        erase(i, node_);
+    }
+    else {
+        insert(node_, new_size - len, value);
+    }
+}
+
+template <class T>
+void list<T>::splice(const_iterator pos, list& x)
+{
+    WSTL_DEBUG(this != &x);
+    if(!x.empty()) {
+        THROW_LENGTH_ERROR_IF(size_ > max_size() - x.size_, "list<T>'s size too big");
+
+        auto f = x.node_->next;
+        auto l = x.node_->prev;
+
+        x.unlink_nodes(f,l);
+        link_nodes(pos.node_, f, l);
+
+        size_ += x.size_;
+        x.size_ = 0;
+    }
+}
+
+template <class T>
+void list<T>::splice(const_iterator pos, list& x, const_iterator it)
+{
+    if(pos.node_ != it.node_ && pos.node_ != it.node_->next) 
+    {
+        THROW_LENGTH_ERROR_IF(size_ > max_size() - 1, "list<T>'s size too big");
+        
+        auto f = it.node_;
+
+        x.unlink_nodes(f,f);
+        link_nodes(pos.node_, f, f);
+        ++size_;
+        --x.size_;
+    }
+}
+
+template <class T>
+void list<T>::splice(const_iterator pos, list& x, const_iterator first, const_iterator last)
+{
+     if(first != last && this != &x) {
+        size_type n = wstl::distance(first, last);
+        THROW_LENGTH_ERROR_IF(size_ > max_size() - n, "list<T>'s size too big");
+
+        auto f = first.node_;
+        auto l = last.node_->prev;
+
+        x.unlink_nodes(f, l);
+        link_nodes(pos.node_, f, l);
+
+        size_ += n;
+        x.size_ -= n;
+     }
+}
+
+template <class T>
+bool operator==(const list<T>& lhs, const list<T>& rhs)
+{
+    auto f1 = lhs.cbegin();
+    auto f2 = rhs.cbegin();
+    auto l1 = lhs.cend();
+    auto l2 = lhs.cend();
+
+    for(; f1 != l1 && f2 != l2 && *f1 == *f2; ++f1, ++f2) {
+        ;
+    }
+
+    return f1 == l1 && f2 == l2;
+}
+
+template <class T>
+bool operator!=(const list<T>& lhs, const list<T>& rhs)
+{
+    return !(lhs == rhs);
+}
+
+} // namespace wstl
 
 #endif

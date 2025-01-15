@@ -82,6 +82,9 @@ void testResize()
     list_test_1.resize(6, 2);
     assert(list_test_1.size() == 6 && (list_test_1.back()) == 2 && "list resize large with number error");
 
+    list_test.swap(list_test_1);
+    assert(list_test.size() == 6 && (list_test.back()) == 2 && list_test_1.size() == 6 && (list_test_1.back()) == 0 && "list swap error");
+
     LOGI("test resize passed!");
 }
 
@@ -115,9 +118,66 @@ void testEmplace()
     LOGI("test emplace passed!");
 }
 
-void testPush()
+void testPushAndPop()
 {
+    wstl::list<int> list_test{1,2,3,4};
+    list_test.push_back(5);
+    assert(list_test.size() == 5 && list_test.back() == 5 && "list_test push_back(value&) error");
+
+    list_test.push_front(6);
+    assert(list_test.size() == 6 && list_test.front() == 6 && "list_test push_front(value&) error");
+
+    wstl::list<std::string> list_string;
+    list_string.push_back(std::string("hello"));
+    assert(list_string.size() == 1 && list_string.front() == "hello" && "list_string push_back(value&&) error");
+
+    list_test.pop_back();
+    assert(list_test.size() == 5 && list_test.back() == 4 && "list_test pop_back() error");
+
+    list_test.pop_front();
+    assert(list_test.size() == 4 && list_test.front() == 1 && "list_test pop_front() error");
+
+
+    LOGI("test push/pop passed!");
+}
+
+void testSplice()
+{
+    wstl::list<int> list1 = {1,2,3};
+    wstl::list<int> list2 = {4,5,6};
+
+    list1.splice(list1.end(), list2);
+    assert(list1.size() == 6 && list1.back() == 6 && "list splice(pos,list&) error");
+
+    list2 = {7,8,9};
+    auto it = list1.begin();
+    wstl::advance(it, 2);
+    list1.splice(it, list2);
+    assert(list1.size() == 9 && list1.back() == 6 && "list splice(pos,list&) error");
+
+    list1 = {1,2,3,4,5,6};
+    list2 = {10,20,30};
+
+    it = wstl::find(list2.begin(), list2.end(), 20);
+    if(it != list2.end()) {
+        list1.splice(list1.end(), list2, it);
+    }
+
+    auto it2 = wstl::find(list1.begin(), list1.end(), 20);
+    assert(it2 != list1.end() && "list splice(pos, list&, value) error");
+
+    list1 = {1,2,3,4,5,6};
+    list2 = {10,20,30};
+
+    auto it_first = wstl::find(list1.begin(), list1.end(), 3);
+    auto it_second = wstl::find(list1.begin(), list1.end(), 5);
     
+    if(it_first != list1.end() && it_second != list1.end()) {
+        list2.splice(list2.begin(), list1, it_first, it_second);
+    }
+    assert(list2.size() == 5 && list2.front() == 3 && "list splice(pos, list&, iter1, iter2) error");
+
+    LOGI("test splice passed!");
 }
 
 int main()
@@ -127,6 +187,7 @@ int main()
     testResize();
     testAssign();
     testEmplace();
-    testPush();
+    testPushAndPop();
+    testSplice();
     return 0;
 }
