@@ -7,6 +7,7 @@
 #include "utils.hpp"
 #include "wconstruct.hpp"
 #include "walgorithm.hpp"
+#include "functional.hpp"
 
 namespace wstl
 {
@@ -422,6 +423,29 @@ public:
     void splice(const_iterator pos, list& other, const_iterator it);
     void splice(const_iterator pos, list& other, const_iterator first, const_iterator last);
 
+    template <class UnaryPredicate>
+    void remove_if(UnaryPredicate pred);
+
+    void remove(const value_type& value) {
+        remove_if([&](const value_type& v){
+            return v == value;
+        });
+    }
+
+    template <class BinaryPredicate>
+    void unique(BinaryPredicate pred);
+
+    void unique() {
+        unique(wstl::equal_to<T>());
+    }
+
+    void merge(list& x){
+        merge(x, wstl::less<T>());
+    }
+
+    template <class Compare>
+    void merge(list& x, Compare comp);
+
 private:
 
     // create / destroy
@@ -825,6 +849,92 @@ void list<T>::splice(const_iterator pos, list& x, const_iterator first, const_it
         size_ += n;
         x.size_ -= n;
      }
+}
+
+template <class T>
+template <class BinaryPredicate>
+void list<T>::unique(BinaryPredicate pred)
+{
+    auto i = begin();
+    auto e = end();
+
+    auto j = i;
+    ++j;
+
+    while (j != e)
+    {
+        if(pred(*i, *j)) {
+            erase(j);
+        }
+        else {
+            i = j;
+        }
+
+        j = i;
+        ++j;
+    }
+    
+}
+
+template <class T>
+template <class UnaryPredicate>
+void list<T>::remove_if(UnaryPredicate pred)
+{
+    auto f = begin();
+    auto l = end();
+    for(auto next = f; f != l; f = next) {
+        ++next;
+        if(pred(*f)) {
+            erase(f);
+        }
+    }
+}
+
+template <class T>
+template <class Compare>
+void list<T>::merge(list& x, Compare comp)
+{
+    if(this == &x) return;
+
+    THROW_LENGTH_ERROR_IF(size_ > max_size() - x.size_, "list<T>'s size too big");
+
+    auto f1 = begin();
+    auto l1 = end();
+    auto f2 = x.begin();
+    auto l2 = x.end();
+
+    while (f1 != l1 && f2 != l2)
+    {
+        if(comp(*f2, *f1)) {
+            auto next = f2;
+            ++next;
+
+            for(; next != l2 && comp(*next, *f1); ++next) {
+                ;
+            }
+
+            auto f = f2.node_;
+            auto l = next.node_->prev;
+            f2 = next;
+
+            x.unlink_nodes(f, l);
+            link_nodes(f1.node_, f, l);
+            ++f1;
+        }
+        else {
+            ++f1;
+        }
+    }
+
+    if(f2 != l2) {
+        auto f = f2.node_;
+        auto l = l2.node_->prev;
+        x.unlink_nodes(f, l);
+        link_nodes(l1.node_, f, l);
+    }
+
+    size_ += x.size_;
+    x.size_ = 0;
 }
 
 template <class T>

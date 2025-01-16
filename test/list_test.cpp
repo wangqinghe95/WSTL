@@ -180,6 +180,65 @@ void testSplice()
     LOGI("test splice passed!");
 }
 
+void testRemove()
+{
+    wstl::list<int> list_test = {1,2,3,4,5};
+    list_test.remove(2);
+    auto it = wstl::find(list_test.begin(), list_test.end(), 2);
+    assert(it == list_test.end() && "list_test remove() error");
+
+    auto f = [](int val){
+        return val % 2 == 0;
+    };
+    list_test.remove_if(f);
+    assert(list_test.size() == 3 && "list_test remove_if() error");
+
+    LOGI("test remove passed!");
+}
+
+void testUnique()
+{
+    wstl::list<int> list_test = {1,2,3,3,4,4,4,5,5,5,5};
+    list_test.unique();
+    assert(list_test.size() == 5 && "list_test unique() error");
+
+    // wstl::list<int> list_test = {3, 6, 9, 12, 1, 4, 7, 10, 13, 2, 5, 8, 11, 14};
+
+    // test unique(BinaryPredicate pred)
+
+    LOGI("test unique passed!");
+}
+
+void testMerge()
+{
+    wstl::list<int> list_test_1 = {1,2,4,6,7};
+    wstl::list<int> list_test_2 = {3,5,8};
+
+    list_test_2.merge(list_test_1);
+
+    assert(list_test_2.size() == 8 && list_test_2.front() == 1 && "list merge(list&) error");
+
+    // list_test_2.clear();
+    wstl::list<int> list_test_1_1 = {1,2,4,6,7};
+    wstl::list<int> list_test_2_1 = {3,5,8};
+
+    list_test_2_1.merge(list_test_1_1, [](const int& x, const int& y){
+        return x > y;
+    });
+
+    // list_test_2.merge(list_test_1, wstl::greater<int>());
+    // list_test_2_1.merge(list_test_1_1, wstl::less<int>());
+
+    for(auto it = list_test_2_1.begin(); it != list_test_2_1.end(); ++it) {
+        LOGI(*it);
+    }
+    assert(list_test_2_1.size() == 8 && list_test_2_1.front() == 8 && "list merge(list&, comp) error");
+    
+    
+    LOGI("test merge passed!");
+
+}
+
 int main()
 {
     testConstrucotr();
@@ -189,5 +248,8 @@ int main()
     testEmplace();
     testPushAndPop();
     testSplice();
+    testRemove();
+    testUnique();
+    testMerge();
     return 0;
 }
