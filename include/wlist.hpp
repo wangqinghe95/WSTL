@@ -417,6 +417,33 @@ public:
         return iterator(link_node);
     }
 
+    // insert
+    iterator insert(const_iterator pos, const value_type& value) {
+        THROW_LENGTH_ERROR_IF(size_ > max_size() - 1, "list<T>'s size too big");
+        auto link_node = create_node(value);
+        ++size_;
+        return link_iter_node(pos, link_node->as_base());
+    }
+
+    iterator insert(const_iterator pos, value_type&& value) {
+        THROW_LENGTH_ERROR_IF(size_ > max_size() - 1, "list<T>'s size too big");
+        auto link_node = create_node(wstl::move(value));
+        ++size_;
+        return link_iter_node(pos, link_node->as_base());
+    }
+
+    iterator insert(const_iterator pos, size_type n, const value_type& value) {
+        THROW_LENGTH_ERROR_IF(size_ > max_size() - n, "list<T>'s size too big");
+        return fill_insert(pos, n , value);
+    }
+
+    template <class Iter, typename std::enable_if<wstl::is_input_iterator<Iter>::value, int>::type = 0>
+    iterator insert(const_iterator pos, Iter first, Iter last) {
+        size_type n = wstl::distance(first, last);
+        THROW_LENGTH_ERROR_IF(size_ > max_size() - n, "list<T>'s size too big");
+        return copy_insert(pos, n, first);
+    }
+
     // list other operation
 
     void splice(const_iterator pos, list& other);
@@ -445,6 +472,15 @@ public:
 
     template <class Compare>
     void merge(list& x, Compare comp);
+
+    template <class Compared>
+    void sort(Compared comp) {
+        list_sort(begin(), end(), size(), comp);
+    }
+
+    void sort() {
+        list_sort(begin(), end(), size(), wstl::less<T>());
+    }
 
 private:
 
@@ -476,32 +512,8 @@ private:
     void        link_nodes(base_ptr pos, base_ptr first, base_ptr last);
     void        unlink_nodes(base_ptr f, base_ptr l);
 
-    // insert
-    iterator insert(const_iterator pos, const value_type& value) {
-        THROW_LENGTH_ERROR_IF(size_ > max_size() - 1, "list<T>'s size too big");
-        auto link_node = create_node(value);
-        ++size_;
-        return link_iter_node(pos, link_node->as_base());
-    }
-
-    iterator insert(const_iterator pos, value_type&& value) {
-        THROW_LENGTH_ERROR_IF(size_ > max_size() - 1, "list<T>'s size too big");
-        auto link_node = create_node(wstl::move(value));
-        ++size_;
-        return link_iter_node(pos, link_node->as_base());
-    }
-
-    iterator insert(const_iterator pos, size_type n, const value_type& value) {
-        THROW_LENGTH_ERROR_IF(size_ > max_size() - n, "list<T>'s size too big");
-        return fill_insert(pos, n , value);
-    }
-
-    template <class Iter, typename std::enable_if<wstl::is_input_iterator<Iter>::value, int>::type = 0>
-    iterator insert(const_iterator pos, Iter first, Iter last) {
-        size_type n = wstl::distance(first, last);
-        THROW_LENGTH_ERROR_IF(size_ > max_size() - n, "list<T>'s size too big");
-        return copy_insert(pos, n, first);
-    }
+    template <class Compared>
+    iterator list_sort(iterator first, iterator last, size_type n, Compared comp);
 
 };
 
@@ -733,6 +745,78 @@ void list<T>::unlink_nodes(base_ptr first, base_ptr last)
 {
     first->prev->next = last->next;
     last->next->prev = first->prev;
+}
+
+template <class T>
+template <class Compared>
+typename list<T>::iterator list<T>::list_sort(iterator first, iterator last, size_type n, Compared comp)
+{
+    if(n < 2) {
+        return first;
+    }
+
+    if(2 == n) {
+        if(comp(*--last, *first)) {
+            auto ln = last.node_;
+            unlink_nodes(ln, ln);
+            link_nodes(first.node_, ln, ln);
+            return last;
+        }
+        return first;
+    }
+
+    auto n2 = n / 2;
+    auto l1 = first;
+    wstl::advance(l1, n2);
+
+    auto result = first = list_sort(first, last, n2, comp);
+    auto f2 = last = list_sort(l1, last, n - n2, comp);
+
+    if(comp(*f2, *first)) {
+        auto m = f2;
+        ++m;
+        for(; m != last && comp(*m, *first); ++m) {
+            ;
+        }
+
+        auto f = last.node_;
+        auto l = m.node_->prev;
+        result = last;
+        l1 = last = m;
+        unlink_nodes(f, l);
+        m = first;
+        ++m;
+        link_nodes(first.node_, f, l);
+        first = m;
+    }
+    else {
+        ++first;
+    }
+
+    while (first != l1 && f2 != last)
+    {
+        if(comp(*f2, *first)) {
+            auto m = f2;
+            ++m;
+            for(; m != last && comp(*m, *first); ++m) {
+                ;
+            }
+
+            auto f = f2.node_;
+            auto l = m.node_->prev;
+            if(l1 == last) l1 = m;
+            f2 = m;
+            unlink_nodes(f,l);
+            m = first;
+            link_nodes(first.node_, f, l);
+            first = m;
+        }
+        else {
+            ++first;
+        }
+    }
+    
+    return result;
 }
 
 /*************** private ***************/

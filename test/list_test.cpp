@@ -202,10 +202,6 @@ void testUnique()
     list_test.unique();
     assert(list_test.size() == 5 && "list_test unique() error");
 
-    // wstl::list<int> list_test = {3, 6, 9, 12, 1, 4, 7, 10, 13, 2, 5, 8, 11, 14};
-
-    // test unique(BinaryPredicate pred)
-
     LOGI("test unique passed!");
 }
 
@@ -222,21 +218,33 @@ void testMerge()
     wstl::list<int> list_test_1_1 = {1,2,4,6,7};
     wstl::list<int> list_test_2_1 = {3,5,8};
 
+    // merge() can only merge two sorted list 
+    // and the rules of these two lists sort must be according to original lists
     list_test_2_1.merge(list_test_1_1, [](const int& x, const int& y){
         return x > y;
     });
 
-    // list_test_2.merge(list_test_1, wstl::greater<int>());
-    // list_test_2_1.merge(list_test_1_1, wstl::less<int>());
-
-    for(auto it = list_test_2_1.begin(); it != list_test_2_1.end(); ++it) {
-        LOGI(*it);
-    }
-    assert(list_test_2_1.size() == 8 && list_test_2_1.front() == 8 && "list merge(list&, comp) error");
-    
+    assert(list_test_2_1.size() == 8 && list_test_2_1.front() == 3 && "list merge(list&, comp) error");
     
     LOGI("test merge passed!");
+}
 
+void testSort()
+{
+    wstl::list<int> list_test = {5,2,9,1,3};
+    list_test.sort();
+
+    assert(list_test.front() == 1 && "list_test sort error!");
+
+    auto f = [](const int& x, const int& y){
+        return x > y;
+    };
+
+    list_test.sort(f);
+
+    assert(list_test.front() == 9 && "list_test sort error!");
+
+    LOGI("test sort passed!");
 }
 
 int main()
