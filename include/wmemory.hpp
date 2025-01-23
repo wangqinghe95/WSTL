@@ -1,6 +1,8 @@
 #ifndef WMEMORY_HPP__
 #define WMEMORY_HPP__
 
+#include "wallocator.hpp"
+
 namespace wstl
 {
 

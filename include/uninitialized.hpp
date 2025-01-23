@@ -35,6 +35,39 @@ ForwardIter uninitialized_fill_n(ForwardIter first, Size n, const T& value)
                                         typename iterator_traits<ForwardIter>::value_type>{});
 }
 
+template <class ForwardIter, class T>
+void unchecked_uninit_fill(ForwardIter first, ForwardIter last, const T& value, std::true_type)
+{
+    wstl::fill(first, last, value);
+}
+
+template <class ForwardIter, class T>
+void unchecked_uninit_fill(ForwardIter first, ForwardIter last, const T& value, std::false_type)
+{
+    auto cur = first;
+    try
+    {
+        for(; cur != last; ++cur) {
+            wstl::construct(&*cur, value);
+        }
+    }
+    catch(...)
+    {
+        for(; first != cur; ++first) {
+            wstl::destroy(&*first);
+        }
+    }
+    
+}
+
+template <class ForwardIter, class T>
+void uninitialized_fill(ForwardIter first, ForwardIter last, const T& value)
+{
+    wstl::unchecked_uninit_fill(first, last, value,
+                                std::is_trivially_copy_assignable<
+                                typename iterator_traits<ForwardIter>::value_type>{});
+}
+
 template <class InputIter, class ForwardIter>
 ForwardIter
 unchecked_uninit_copy(InputIter first, InputIter last, ForwardIter result, std::true_type)

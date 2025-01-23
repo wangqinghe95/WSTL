@@ -2,10 +2,8 @@
 #define WLIST_HPP__
 
 #include "witerator.hpp"
-#include "wallocator.hpp"
 #include "wmemory.hpp"
 #include "utils.hpp"
-#include "wconstruct.hpp"
 #include "walgorithm.hpp"
 #include "functional.hpp"
 
@@ -205,6 +203,7 @@ public:
     typedef list_iterator<T>                        iterator;
     typedef list_const_iterator<T>                  const_iterator;
     typedef wstl::reverse_iterator<iterator>        reverse_iterator;
+    typedef wstl::reverse_iterator<const_iterator>  const_reverse_iterator;
 
     typedef typename node_traits<T>::base_ptr       base_ptr;
     typedef typename node_traits<T>::node_ptr       node_ptr;
@@ -280,8 +279,31 @@ public:
         return node_;
     }
 
+    reverse_iterator rbegin() noexcept {
+        return reverse_iterator(end());
+    }
+    
+    const_reverse_iterator rbegin() const noexcept {
+        return reverse_iterator(end());
+    }
+    
+    reverse_iterator rend() noexcept {
+        return reverse_iterator(rend());
+    }
+    const_reverse_iterator rend() const noexcept {
+        return reverse_iterator(begin());
+    }
+
     const_iterator cbegin() const noexcept {
         return begin();
+    }
+
+    const_reverse_iterator crbegin() const noexcept {
+        return rbegin();
+    }
+
+    const_reverse_iterator crend() const noexcept {
+        return rend();
     }
 
     const_iterator cend() const noexcept {
@@ -481,6 +503,8 @@ public:
     void sort() {
         list_sort(begin(), end(), size(), wstl::less<T>());
     }
+
+    void reverse();
 
 private:
 
@@ -1022,6 +1046,23 @@ void list<T>::merge(list& x, Compare comp)
 }
 
 template <class T>
+void list<T>::reverse()
+{
+    if(size_ <= 1) {
+        return ;
+    }
+
+    auto i = begin();
+    auto e = end();
+    while (i.node_ != e.node_)
+    {
+        wstl::swap(i.node_->prev, i.node_->next);
+        i.node_ = i.node_->prev;
+    }
+    wstl::swap(e.node_->prev, e.node_->next);    
+}
+
+template <class T>
 bool operator==(const list<T>& lhs, const list<T>& rhs)
 {
     auto f1 = lhs.cbegin();
@@ -1040,6 +1081,37 @@ template <class T>
 bool operator!=(const list<T>& lhs, const list<T>& rhs)
 {
     return !(lhs == rhs);
+}
+
+template  <class T>
+bool operator<(const list<T>& lhs, const list<T>& rhs)
+{
+    return wstl::lexicographical_compare(lhs.cbegin(), lhs.cend(), rhs.cbegin(), rhs.cend());
+}
+
+template <class T>
+bool operator<=(const list<T>& lhs, const list<T>& rhs)
+{
+    return !(rhs < lhs);
+}
+
+template <class T>
+bool operator>=(const list<T>& lhs, const list<T>& rhs)
+{
+    return !(lhs < rhs);
+}
+
+template <class T>
+bool operator>(const list<T>& lhs, const list<T>& rhs)
+{
+    return rhs < lhs;
+}
+
+// overload swap
+template <class T>
+void swap(list<T>& lhs, list<T>& rhs) noexcept
+{
+    lhs.swap(rhs);
 }
 
 } // namespace wstl

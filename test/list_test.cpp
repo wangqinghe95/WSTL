@@ -247,6 +247,16 @@ void testSort()
     LOGI("test sort passed!");
 }
 
+void testReverse()
+{
+    wstl::list<int> list_test = {1,2,3,4,5};
+    list_test.reverse();
+
+    assert(list_test.size() == 5 && list_test.front() == 5 && "list reverse() error");
+
+    LOGI("test reverse passed!");
+}
+
 int main()
 {
     testConstrucotr();
@@ -259,5 +269,6 @@ int main()
     testRemove();
     testUnique();
     testMerge();
+    testReverse();
     return 0;
 }

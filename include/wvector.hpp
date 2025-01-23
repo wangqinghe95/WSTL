@@ -11,11 +11,9 @@
  * Copyright © Luis. All rights reserved.
  */
 
-#include "wallocator.hpp"
 #include "walgorithm.hpp"
 #include "utils.hpp"
 #include "uninitialized.hpp"
-#include "wconstruct.hpp"
 #include "wmemory.hpp"
 #include "witerator.hpp"
 
