@@ -56,10 +56,10 @@ void destroy_one(Ty* pointer, std::false_type)
 }
 
 template <class ForwardIter>
-void destory_cat(ForwardIter, ForwardIter, std::true_type){}
+void destroy_cat(ForwardIter, ForwardIter, std::true_type){}
 
 template <class Forwarditer>
-void destory_cat(Forwarditer first, Forwarditer last, std::false_type)
+void destroy_cat(Forwarditer first, Forwarditer last, std::false_type)
 {
     for(; first != last; ++first) {
         destroy(&*first);
@@ -75,7 +75,7 @@ void destroy(Ty* pointer)
 template <class ForwardIter>
 void destroy(ForwardIter first, ForwardIter last)
 {
-    destory_cat(first, last, std::is_trivially_destructible<
+    destroy_cat(first, last, std::is_trivially_destructible<
             typename iterator_traits<ForwardIter>::value_type>{});
 }
 

@@ -347,6 +347,56 @@ InputIter find(InputIter first, InputIter last, const T& value)
     return first;
 }
 
+/**** algobase.h */
+/*
+template <class BidirectionalIter1, class BidirectionalIter2>
+BidirectionalIter2 unchecked_copy_backward_cat(BidirectionalIter1 first, BidirectionalIter1 last,
+                                            BidirectionalIter2 result, wstl::bidirectional_iterator_tag)
+{
+    while (first != last)
+    {
+        *--result = *--last;
+    }
+    return result;
+}
+
+template <class RandomIter1, class BidirectionalIter2>
+BidirectionalIter2 unchecked_copy_backward_cat(RandomIter1 first, RandomIter1 last,
+                                            BidirectionalIter2 result, wstl::random_access_iterator_tag)
+{
+    for(auto n = last - first; n > 0; --n) {
+        *--result = *--last;
+    }
+    return result;
+}
+
+template <class BidirectionalIter1, class BidirectionalIter2>
+BidirectionalIter2 unchecked_copy_backward(BidirectionalIter1 first, BidirectionalIter1 last,
+                                         BidirectionalIter2 result)
+{
+    return unchecked_copy_backward_cat(first, last, result, iterator_category(first));
+}
+                                    
+
+template <class Tp, class Up>
+typename std::enable_if<std::is_same<typename std::remove_const<Tp>::type,Up>::value &&
+                        std::is_trivially_copy_assignable<Up>::value, Up*>::type
+unchecked_copy_backward(Tp* first, Tp* last, Up* result)
+{
+    const auto n = static_cast<size_t>(last - first);
+    if( 0 != n) {
+        result -= n;
+        std::memmove(result, first, n*sizeof(Up));
+    }
+    return result;
+}
+
+template <class BidirectionalIter1, class BidirectionalIter2>
+BidirectionalIter2 copy_backward(BidirectionalIter1 first, BidirectionalIter2 last, BidirectionalIter2 result)
+{
+    return unchecked_copy_backward(first, last, result);
+}*/
+/** algobase.h */
 }   // namespace wstl
 
 #endif
