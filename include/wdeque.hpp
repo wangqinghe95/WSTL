@@ -327,6 +327,7 @@ public:
     // insert()
     iterator insert(iterator position, const value_type& value);
     iterator insert(iterator position, value_type&& value);
+    void insert(iterator position, size_type n, const value_type& value);
     template <class IIter, typename std::enable_if<
                 wstl::is_input_iterator<IIter>::value, int>::type = 0>
     void insert(iterator position, IIter first, IIter last)
@@ -368,6 +369,7 @@ private:
     // insert
     template <class... Args>
     iterator insert_aux(iterator position, Args&& ...args);
+    void fill_insert(iterator position, size_type n, const value_type& x);
     template <class FIter>
     void copy_insert(iterator, FIter, FIter, size_type);
     template <class IIter>
@@ -613,11 +615,108 @@ typename deque<T>::iterator deque<T>::insert(iterator position, const value_type
         return insert_aux(position, value);
     }
 }
+
+template <class T>
+void deque<T>::insert(iterator position, size_type n, const value_type& value)
+{
+    if(position.cur == begin_.cur) {
+        require_capacity(n, true);
+        auto new_begin = begin_ - n;
+        wstl::uninitialized_fill_n(new_begin, n, value);
+        begin_ = new_begin;
+    }
+    else if(position.cur == end_.cur) {
+        require_capacity(n, false);
+        auto new_end = end_ + n;
+        wstl::uninitialized_fill_n(end_, n, value);
+        end_ = new_end;
+    }
+    else {
+        fill_insert(position, n, value);
+    }
+}
+
 template <class T>
 typename deque<T>::iterator deque<T>::insert(iterator position, value_type&& value)
 {
-    // todo
-    return iterator();
+    if(position.cur == begin_.cur) {
+        push_front(value);
+        return begin_;
+    }
+    else if(position.cur == end_.cur) {
+        push_back(value);
+        auto tmp = end_;
+        --tmp;
+        return tmp;
+    }
+    else {
+        return insert_aux(position, value);
+    }
+}
+
+template <class T>
+void deque<T>::fill_insert(iterator position, size_type n, const value_type& value)
+{
+    const size_type elems_before = position - begin_;
+    const size_type len = size();
+    auto value_copy = value;
+    if(elems_before <(len() / 2)) {
+        require_capacity(n, true);
+        auto old_begin = begin_;
+        auto new_begin = begin_ - n;
+        position = begin_ + elems_before;
+        try
+        {
+            if(elems_before >= n) {
+                auto begin_n = begin_ + n;
+                wstl::uninitialized_copy(begin_, begin_n, new_begin);
+                begin_ = new_begin;
+                wstl::copy(begin_n, position, old_begin);
+                wstl::fill(position-n, position, value_copy);
+            }
+            else {
+                wstl::unchecked_uninit_fill(wstl::unchecked_uninit_copy(begin_, position, new_begin), begin_, value_copy);
+                begin_ = new_begin;
+                wstl::fill(old_begin, position, value_copy);
+            }
+
+        }
+        catch(...)
+        {
+            if(new_begin.node != begin_.node) destroy_buffer(new_begin.node, begin_.node - 1);
+            throw;
+        }
+    }
+    else {
+        require_capacity(n, false);
+        auto old_end = end_;
+        auto new_end = end_ + n;
+        const size_type elems_after = len - elems_before;
+        position = end_ - elems_after;
+        try
+        {
+            if(elems_after > n) {
+                auto end_n = end_ - n;
+                wstl::uninitialized_copy(end_n, end_, end_);
+                end_ = new_end;
+                wstl::copy_backward(position, end_n, old_end);
+                wstl::fill(position, position + n, value_copy);
+            }
+            else {
+                wstl::uninitialized_fill(end_, position + n, value_copy);
+                wstl::uninitialized_copy(position, end_, position + n);
+                end_ = new_end;
+                wstl::fill(position, old_end, value_copy);
+            }
+        }
+        catch(...)
+        {
+            if(new_end.node != end_.node) {
+                destroy_buffer(end_.node + 1, new_end.node);
+            }
+            throw;
+        }
+    }
 }
 
 template <class T>
@@ -652,9 +751,72 @@ typename deque<T>::iterator deque<T>::insert_aux(iterator position, Args&& ...ar
 
 template <class T>
 template <class FIter>
-void deque<T>::copy_insert(iterator, FIter, FIter, size_type)
+void deque<T>::copy_insert(iterator position, FIter first, FIter last, size_type n)
 {
-    // todo
+    const size_type elems_before = position - begin_;
+    auto len = size();
+    if(elems_before < (len / 2)) {
+        require_capacity(n, true);
+        auto old_begin = begin_;
+        auto new_begin = begin_ - n;
+        position = begin_ + elems_before;
+        try
+        {
+            if(elems_before >= n) {
+                auto begin_n = begin_ + n;
+                wstl::uninitialized_copy(begin_, begin_n, new_begin);
+                begin_ = new_begin;
+                wstl::copy(begin_n, position, old_begin);
+                wstl::copy(first, last, position - n);
+            }
+            else {
+                auto mid = first;
+                wstl::advance(mid, n - elems_before);
+                wstl::uninitialized_copy(first, mid, wstl::uninitialized_copy(begin_, position, new_begin));
+                begin_ = new_begin;
+                wstl::copy(mid, last, old_begin);
+            }
+        }
+        catch(...)
+        {
+            if(new_begin.node != begin_.node) {
+                destroy_buffer(new_begin.node, begin_.node - 1);
+            }
+            throw;
+        }
+        
+    }
+    else {
+        require_capacity(n, false);
+        auto old_end = end_;
+        auto new_end = end_ + n;
+        const auto elems_after = len - elems_before;
+        position = end_ - elems_after;
+        try
+        {
+            if(elems_after > n) {
+                auto end_n = end_ - n;
+                wstl::unchecked_uninit_copy(end_n, end_, end_);
+                end_ = new_end;
+                wstl::copy_backward(position, end_n, old_end);
+                wstl::copy(first, last, position);
+            }
+            else {
+                auto mid = first;
+                wstl::advance(mid, elems_after);
+                wstl::uninitialized_copy(position, end_, wstl::uninitialized_copy(mid, last, end_));
+                end_ = new_end;
+                wstl::copy(first, mid, position);
+            }
+        }
+        catch(...)
+        {
+            if(new_end.node != end_.node) {
+                destroy_buffer(end_.node + 1, new_end.node);
+            }
+            throw;
+        }
+    }
 }
 
 template <class T>
