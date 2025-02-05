@@ -238,7 +238,6 @@ public:
         , map_(rhs.map_)
         , map_size_(rhs.map_size_)
     {
-        LOGI("deque(deque&&)");
         rhs.map_ = nullptr;
         rhs.map_size_ = 0;
     }
@@ -314,8 +313,7 @@ public:
     void push_back(const value_type& value);
 
     void push_front(value_type&& value) {
-        // emplace_front(wstl::move(value));
-        // todo
+        emplace_front(wstl::move(value));
     }
 
     void push_back(value_type&& value) {
@@ -400,6 +398,13 @@ deque<T>& deque<T>::operator=(const deque& rhs)
 template <class T>
 deque<T>& deque<T>::operator=(deque&& rhs)
 {
+    clear();
+    begin_ = wstl::move(rhs.begin_);
+    end_ = wstl::move(rhs.end_);
+    map_ = rhs.map_;
+    map_size_ = rhs.map_size_;
+    rhs.map_ = nullptr;
+    rhs.map_size_ = 0;
     return *this;
 }
 
@@ -864,7 +869,23 @@ template <class T>
 template <class ...Args>
 void deque<T>::emplace_front(Args&& ...args)
 {
-    // todo
+    if(begin_.cur != begin_.first) {
+        data_allocator::construct(begin_.cur - 1, wstl::forward<Args>(args)...);
+        --begin_.cur;
+    }
+    else {
+        require_capacity(1, true);
+        try
+        {
+            --begin_;
+            data_allocator::construct(begin_.cur, wstl::forward<Args>(args)...);
+        }
+        catch(...)
+        {
+            ++begin_;
+            throw;
+        }
+    }
 }
 
 template <class T>
