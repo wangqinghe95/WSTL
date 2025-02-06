@@ -282,6 +282,11 @@ public:
         return begin_[n];
     }
 
+    const_reference operator[](size_type n) const {
+        WSTL_DEBUG(n < size());
+        return begin_[n];
+    }
+
     reference front() {
         WSTL_DEBUG(!empty());
         return *begin();
@@ -332,6 +337,7 @@ public:
                 wstl::is_input_iterator<IIter>::value, int>::type = 0>
     void insert(iterator position, IIter first, IIter last)
     {
+        LOGD("insert(iterator, IIter, IIter )");
         insert_dispatch(position, first, last, iterator_category(first));
     }
 
@@ -418,7 +424,7 @@ typename deque<T>::map_pointer deque<T>::create_map(size_type size)
     map_pointer mp = nullptr;
     mp = map_allocator::allocate(size);
     for(size_type i = 0; i < size; ++i) {
-        *(mp+1) = nullptr;
+        *(mp+i) = nullptr;
     }
     return mp;
 }
@@ -601,6 +607,7 @@ void deque<T>::require_capacity(size_type n, bool front)
 template <class T>
 typename deque<T>::iterator deque<T>::insert(iterator position, const value_type& value)
 {
+    LOGD("insert(iterator, const value_type&)");
     if(position.cur == begin_.cur) {
         push_front(value);
         return begin_;
@@ -619,6 +626,7 @@ typename deque<T>::iterator deque<T>::insert(iterator position, const value_type
 template <class T>
 void deque<T>::insert(iterator position, size_type n, const value_type& value)
 {
+    LOGD("insert(iterator,n,value)");
     if(position.cur == begin_.cur) {
         require_capacity(n, true);
         auto new_begin = begin_ - n;
@@ -639,6 +647,7 @@ void deque<T>::insert(iterator position, size_type n, const value_type& value)
 template <class T>
 typename deque<T>::iterator deque<T>::insert(iterator position, value_type&& value)
 {
+    LOGD("insert(iterator, value_type&&)");
     if(position.cur == begin_.cur) {
         push_front(value);
         return begin_;
@@ -660,7 +669,7 @@ void deque<T>::fill_insert(iterator position, size_type n, const value_type& val
     const size_type elems_before = position - begin_;
     const size_type len = size();
     auto value_copy = value;
-    if(elems_before <(len() / 2)) {
+    if(elems_before <(len / 2)) {
         require_capacity(n, true);
         auto old_begin = begin_;
         auto new_begin = begin_ - n;
@@ -675,7 +684,7 @@ void deque<T>::fill_insert(iterator position, size_type n, const value_type& val
                 wstl::fill(position-n, position, value_copy);
             }
             else {
-                wstl::unchecked_uninit_fill(wstl::unchecked_uninit_copy(begin_, position, new_begin), begin_, value_copy);
+                wstl::uninitialized_fill(wstl::uninitialized_copy(begin_, position, new_begin), begin_, value_copy);
                 begin_ = new_begin;
                 wstl::fill(old_begin, position, value_copy);
             }
@@ -796,7 +805,7 @@ void deque<T>::copy_insert(iterator position, FIter first, FIter last, size_type
         {
             if(elems_after > n) {
                 auto end_n = end_ - n;
-                wstl::unchecked_uninit_copy(end_n, end_, end_);
+                wstl::uninitialized_copy(end_n, end_, end_);
                 end_ = new_end;
                 wstl::copy_backward(position, end_n, old_end);
                 wstl::copy(first, last, position);
@@ -932,7 +941,7 @@ void deque<T>::push_back(const value_type& value)
     }
     else {
         require_capacity(1, false);
-        data_allocator::constrcut(end_.cur, value);
+        data_allocator::construct(end_.cur, value);
         ++end_;
     }
 }

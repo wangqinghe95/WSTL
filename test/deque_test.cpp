@@ -38,7 +38,7 @@ void testConstruct()
     wstl::deque<int> dp_assign_right_value = wstl::move(dp_original);
     assert(dp_assign_right_value.size() == 5 && dp_assign_right_value[0] == 1 && dp_assign_right_value[4] == 5 && dp_original.size() == 0 && "operator=(deque&&) error");
 
-    LOGI("deque construct passed!");
+    LOGI("test construct passed!");
 }
 
 
@@ -58,18 +58,17 @@ void testPushAndEmplace()
     push_test_deque.push_front(7);
     assert(push_test_deque.size() == 7 && push_test_deque.front() == 7 && "push front error");
 
-
-    LOGI("deque emplace front");
+    LOGI("test emplace/front passed!");
 }
 
 
 void testClear()
 {
-    wstl::deque<int> deque_test;
+    wstl::deque<int> deque_test{1,2,3,4};
     deque_test.clear();
     assert(deque_test.size() == 0 && "deque clear() error");
 
-    LOGI("deque clear() passed!");
+    LOGI("test clear passed!");
 
 }
 
@@ -83,11 +82,58 @@ void testMove()
     LOGI("test move passed!");
 }
 
+void testPop()
+{
+    wstl::deque<int> dq_pop {1,2,3,4,5};
+    dq_pop.pop_back();
+    assert(dq_pop.size() == 4 && dq_pop.back() == 4 && "deque pop_back() error");
+
+    dq_pop.pop_front();
+    assert(dq_pop.size() == 3 && dq_pop.front() == 2 && "deque pop_front() error");
+
+    LOGI("test pop passed!");
+}
+
+void testInsert()
+{
+    wstl::deque<int> dq_insert {1,2,3,4};
+    int val = 5;
+    dq_insert.insert(dq_insert.begin()+3, val);
+    assert(dq_insert.size() == 5 && dq_insert[3] == 5 && "deque insert(iterator, value)");
+
+    dq_insert.insert(dq_insert.begin()+3, 6);
+    assert(dq_insert.size() == 6 && dq_insert[3] == 6 && "deque insert(iterator, value_type&&)");
+
+    dq_insert.insert(dq_insert.begin(), 3, val);
+    assert(dq_insert.size() == 9 && dq_insert[0] == 5 && "deque insert(iterator, n, value)");
+
+    wstl::deque<int> dq_insert_copy;
+    dq_insert_copy.insert(dq_insert_copy.begin(), dq_insert.begin(), dq_insert.end());
+    assert(dq_insert_copy.size() == 9 && dq_insert.front() == 5 && dq_insert.back() == 4 && "deque insert(iterator, n, value)");
+
+    LOGI("test insert passed!");
+}
+
+void testErase()
+{
+    wstl::deque<int> dq_erase{1,2,3,4,5};
+    dq_erase.erase(dq_erase.begin()+2);
+    assert(dq_erase.size() == 4 && "deque erase(iterator)");
+
+    dq_erase.erase(dq_erase.begin(), dq_erase.end());
+    assert(dq_erase.size() == 0 && "deque erase(iterator, iterator)");
+
+
+    LOGI("test erase passed!");
+}
+
 int main()
 {
-    // testMove();
-    // testClear();
     testConstruct();
     testPushAndEmplace();
+    testPop();
+    testClear();
+    testInsert();
+    testErase();
     return 0;
 }
