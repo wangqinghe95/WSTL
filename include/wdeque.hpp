@@ -1086,6 +1086,25 @@ void deque<T>::swap(deque& rhs) noexcept
     }
 }
 
+template <class T>
+void swap(deque<T>& lhs, deque<T>& rhs)
+{
+    lhs.swap(rhs);
+}
+
+template <class T>
+bool operator==(const deque<T>& lhs, const deque<T>& rhs)
+{
+    return lhs.size() == rhs.size() && wstl::equal(lhs.begin(), lhs.end(), rhs.begin());
+}
+
+template <class T>
+bool operator<(const deque<T>& lhs, const deque<T>& rhs)
+{
+    return wstl::lexicographical_compare(lhs.begin(), lhs.end(),
+                rhs.begin(), rhs.end());
+}
+
 }   // wstl
 
 #endif

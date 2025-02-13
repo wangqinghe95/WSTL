@@ -48,21 +48,99 @@ public:
             : c_(wstl::move(rhs.c_)) {
     }
 
+    queue& operator=(const queue& rhs) {
+        c_ = rhs.c_;
+        return *this;
+    }
+
+    queue& operator=(queue&& rhs) noexcept(std::is_nothrow_move_assignable<Container>::value) {
+        c_ = wstl::move(rhs.c_);
+        return *this;
+    }
+
+    queue& operator=(std::initializer_list<T> list) {
+        c_ = list;
+        return *this;
+    }
+
+    ~queue() = default;
+
+    // way with visiting value
+    reference           front()             { return c_.front(); }
+    const_reference     front() const       { return c_.front(); }
+    reference           back()              { return c_.back(); }
+    const_reference     back()  const       { return c_.back(); }
+
     // capacity related
 
     size_type size() const noexcept {
         return c_.size();
     }
 
-    reference           front()             { return c_.front(); }
-    const_reference     front() const       { return c_.front(); }
-    reference           back()              { return c_.back(); }
-    const_reference     back()  const       { return c_.back(); }
+    bool empty() const noexcept {
+        return c_.empty();
+    }
+
+    // modify value of container
+    template <class ...Args>
+    void emplace(Args&& ...args) {
+        c_.emplace_back(wstl::forward<Args>(args)...);
+    }
+
+    void push(const value_type& value) {
+        c_.push_back(value);
+    }
+
+    void push(value_type&& value) {
+        c_.emplace_back(wstl::move(value));
+    }
+
+    void pop() {
+        c_.pop_front();
+    }
+
+    void clear() {
+        while (!empty())
+        {
+            pop();
+        }
+        
+    }
+
+    void swap(queue& rhs) noexcept(noexcept(wstl::swap(c_, rhs.c_))) {
+        wstl::swap(c_, rhs.c_);
+    }
 
 // member function
 private:
 
+    friend bool operator==(const queue& lhs, const queue& rhs) {
+        return lhs.c_ == rhs.c_;
+    }
+
+    friend bool operator< (const queue& lhs, const queue& rhs) {
+        return lhs.c_ < rhs.c_;
+    }
+
 };   // queue
+
+template <class T, class Container>
+void swap(queue<T, Container>& lhs, queue<T, Container>& rhs) noexcept(noexcept(lhs.swap(rhs)))
+{
+    lhs.swap(rhs);
+}
+
+template <class T, class Container>
+bool operator==(const queue<T, Container>& lhs, const queue<T,Container>& rhs)
+{
+    return lhs == rhs;
+}
+
+template <class T, class Container>
+bool operator<(const queue<T, Container>& lhs, const queue<T, Container>& rhs)
+{
+    return lhs < rhs;
+}
 
 }   // wstl
 

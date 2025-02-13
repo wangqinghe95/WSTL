@@ -127,6 +127,17 @@ void testErase()
     LOGI("test erase passed!");
 }
 
+void testSwap()
+{
+    wstl::deque<int> dq_swap_1 {1,2,3,4,5};
+    wstl::deque<int> dq_swap_2 {6,7,8,9};
+
+    dq_swap_1.swap(dq_swap_2);
+    assert(dq_swap_1.size() == 4 && dq_swap_2.size() == 5 && "deque swap error");
+
+    LOGI("test swap passed!");
+}
+
 int main()
 {
     testConstruct();
@@ -135,5 +146,6 @@ int main()
     testClear();
     testInsert();
     testErase();
+    testSwap();
     return 0;
 }

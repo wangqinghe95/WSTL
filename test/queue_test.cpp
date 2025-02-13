@@ -32,13 +32,72 @@ void testConstruct()
     wstl::queue<int> queue_copy_1(wstl::move(queue_orig_2));
     assert(queue_copy_1.size() == 5 && queue_copy_1.front() == 1 && "queue(queue&&) error");
 
+    wstl::queue<int> queue_operator;
+    queue_operator = queue_copy_1;
+    assert(queue_operator.size() == 5 && queue_operator.front() == 1 && "operator=(const queue&) error");
+    
+    wstl::queue<int> queue_operator_2;
+    queue_operator_2 = wstl::move(queue_copy_1);
+    assert(queue_operator_2.size() == 5 && queue_operator_2.front() == 1 && "operator=(queue&&) error");
+
+    wstl::queue<int> queue_operator3;
+    queue_operator3 = {1,2,3,4,5};
+    assert(queue_operator3.size() == 5 && queue_operator3.front() == 1 && "operator=(initializer_list) error");
 
     LOGI("test queue constrcut passed!");
 
 }
 
+void testEmplace()
+{
+    wstl::queue<int> queue_emplace {1,2,3,4,5};
+    queue_emplace.emplace(6);
+    assert(queue_emplace.size() == 6 && queue_emplace.back() == 6 && "queue emplace(Args&&) error");
+
+    int val = 7;
+    queue_emplace.push(val);
+    assert(queue_emplace.size() == 7 && queue_emplace.back() == 7 && "queue push(const value_type&) error");
+
+    queue_emplace.push(wstl::move(8));
+    assert(queue_emplace.size() == 8 && queue_emplace.back() == 8 && "queue push(value_type&&) error");
+
+    queue_emplace.pop();
+    assert(queue_emplace.size() == 7 && queue_emplace.front() == 2 && "queue pop() error");
+
+    queue_emplace.clear();
+    assert(queue_emplace.size() == 0 && "queue clear()");
+
+    LOGI("test emplace passed!");
+}
+
+void testSwap()
+{
+    wstl::queue<int> queue_1{1,2,3,4,5};
+    wstl::queue<int> queue_2{6,7,8,9};
+    queue_1.swap(queue_2);
+    assert(queue_1.size() == 4 && queue_2.size() == 5 && "queue swap error");
+
+    LOGI("queue swap passed!");
+}
+
+void testOperator()
+{
+    wstl::queue<int> queue_1 {1,2,3,4,5};
+    wstl::queue<int> queue_2 (queue_1);
+
+    assert(queue_1 == queue_2 && "queue operator= error");
+
+    wstl::queue<int> queue_3 {1,2,3,4,5,6};
+    assert(queue_1 < queue_3 && "queue operator< error");
+
+    LOGI("test operator passed!");
+}
+
 int main()
 {
     testConstruct();
+    testEmplace();
+    testSwap();
+    testOperator();
     return 0;
 }
