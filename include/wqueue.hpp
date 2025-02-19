@@ -2,6 +2,9 @@
 #define WQUEUE_HPP__
 
 #include "wdeque.hpp"
+#include "wvector.hpp"
+#include "functional.hpp"
+#include "walgorithm.hpp"
 
 namespace wstl
 {
@@ -141,6 +144,111 @@ bool operator<(const queue<T, Container>& lhs, const queue<T, Container>& rhs)
 {
     return lhs < rhs;
 }
+
+template <class T, class Container = wstl::vector<T>,
+        class Compare = wstl::less<typename Container::value_type>>
+class priority_queue
+{
+public:
+    typedef Container                               container_type;
+    typedef Compare                                 value_compare;
+
+    
+    typedef typename Container::value_type          value_type;
+    typedef typename Container::size_type           size_type;
+    typedef typename Container::const_reference     const_reference;
+
+private:
+    container_type                  c_;
+    value_compare                   comp_;
+
+public:
+    priority_queue() = default;
+
+    priority_queue(const Compare& c) : c_(), comp_(c) {}
+
+    explicit priority_queue(size_type n) : c_(n) {
+        wstl::make_heap(c_.begin(), c_.end(), comp_);
+    }
+
+    priority_queue(size_type n, const value_type& value)
+            : c_(n, value) 
+    {
+        wstl::make_heap(c_.begin(), c_.end(), comp_);
+    }
+
+    template <class IIter>
+    priority_queue(IIter first, IIter last) : c_(first, last)
+    {
+        wstl::make_heap(c_.begin(), c_.end(), comp_);
+    }
+
+    priority_queue(std::initializer_list<T> ilist) : c_(ilist)
+    {
+        wstl::make_heap(c_.begin(), c_.end(), comp_);
+    }
+
+    priority_queue(const Container& s) : c_(s)
+    {
+        wstl::make_heap(c_.begin(), c_.end(), comp_);
+    }
+
+    priority_queue(Container&& s) : c_(wstl::move(s))
+    {
+        wstl::make_heap(c_.begin(), c_.end(), comp_);
+    }
+
+    priority_queue(const priority_queue& rhs) : c_(rhs.c_), comp_(rhs.comp_)
+    {
+        wstl::make_heap(c_.begin(), c_.end(), comp_);
+    }
+
+    priority_queue(priority_queue&& rhs) : c_(wstl::move(rhs.c_)), comp_(rhs.comp_)
+    {
+        wstl::make_heap(c_.begin(), c_.end(), comp_);
+    }
+
+    priority_queue& operator=(const priority_queue& rhs)
+    {
+        c_ = rhs.c_;
+        comp_ = rhs.comp_;
+        wstl::make_heap(c_.begin(), c_.end(), comp_);
+        return *this;
+    }
+
+    priority_queue& operator=(priority_queue&& rhs)
+    {
+        c_ = wstl::move(rhs.c_);
+        comp_ = rhs.comp_;
+        wstl::make_heap(c_.begin(), c_.end(), comp_);
+        return *this;
+    }
+
+    priority_queue& operator=(std::initializer_list<T> ilist)
+    {
+        c_ = ilist;
+        comp_ = value_compare();
+        wstl::make_heap(c_.begin(), c_.end(), comp_);
+        return *this;
+    }
+
+    ~priority_queue() = default;
+
+public:
+
+    const_reference top() const {
+        return c_.front();
+    }
+
+    bool empty() const noexcept {
+        return c_.empty();
+    }
+
+    size_type size() const noexcept {
+        return c_.size();
+    }
+
+};  // priority queue
 
 }   // wstl
 

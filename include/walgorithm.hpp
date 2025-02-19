@@ -347,6 +347,128 @@ InputIter find(InputIter first, InputIter last, const T& value)
     return first;
 }
 
+/** heap start ******************************/
+
+template <class RandomIter, class Distance, class T>
+void push_heap_aux(RandomIter first, Distance holeIndex, Distance topIndex, T value)
+{
+    auto parent = (holeIndex - 1) / 2;
+    while (holeIndex > topIndex && *(first + parent) < value)
+    {
+        *(first + holeIndex) = *(first + parent);
+        holeIndex = parent;
+        parent = (holeIndex - 1) / 2;
+    }
+    *(first + holeIndex) = value;
+}
+
+template <class RandomIter, class T, class Distance, class Compared>
+void push_heap_aux(RandomIter first, Distance holeIndex, Distance topIndex,
+                    T value, Compared comp)
+{
+    auto parent = (holeIndex - 1) / 2;
+    while (holeIndex > topIndex && comp(*(first + parent), value))
+    {
+        *(first+holeIndex) = *(first + parent);
+        holeIndex = parent;
+        parent = (holeIndex - 1) / 2;
+    }
+    *(first + holeIndex) = value;
+}
+
+template <class RandomIter, class T, class Distance>
+void adjust_heap(RandomIter first, Distance holeIndex, Distance len, T value)
+{
+    auto topIndex = holeIndex;
+    auto rchild = 2 * holeIndex + 2;
+    while (rchild < len)
+    {
+        if((*(first+rchild) < *(first+rchild-1))) --rchild;
+        *(first+holeIndex) = *(first+rchild);
+        holeIndex = rchild;
+        rchild = 2 * (rchild+1);
+    }
+
+    if(rchild == len) {
+        *(first+holeIndex) = *(first+(rchild-1));
+        holeIndex = rchild - 1;
+    }
+
+    wstl::push_heap_aux(first, holeIndex, topIndex, value);    
+}
+
+
+template <class RandomIter, class T, class Distance, class Compared>
+void adjust_heap(RandomIter first, Distance holeIndex, Distance len, T value,
+                Compared comp)
+{
+    auto topIndex = holeIndex;
+    auto rchild = 2 * holeIndex + 2;
+    while (rchild < len)
+    {
+        if(comp(*(first+rchild), *(first+rchild-1))){
+            --rchild;
+        }
+        *(first+holeIndex) = *(first+rchild);
+        holeIndex = rchild;
+        rchild = 2 * (rchild+1);
+    }
+
+    if(rchild == len) {
+        *(first+holeIndex) = *(first+(rchild-1));
+        holeIndex = rchild - 1;
+    }
+
+    wstl::push_heap_aux(first, holeIndex, topIndex, value, comp);    
+}
+
+template <class RandomIter, class Distance>
+void make_heap_aux(RandomIter first, RandomIter last, Distance*)
+{
+    if(last - first < 2) return;
+    auto len = last - first;
+    auto holeIndex = (len - 2) / 2;
+    while (true)
+    {
+        wstl::adjust_heap(first, holeIndex, len, *(first+holeIndex));
+        if(0 == holeIndex) return;
+        holeIndex--;
+    }
+}
+
+template <class RandomIter, class Distance, class Compared>
+void make_heap_aux(RandomIter first, RandomIter last, Distance*, Compared comp)
+{
+    if(last - first < 2) return;
+    auto len = last - first;
+    auto holeIndex = (len - 2) / 2;
+    while (true)
+    {
+        // LOGI("first: ", *first, " holeIndex: ", holeIndex, " len: ", len, " *(first+holeIndex): ", *(first+holeIndex));
+        wstl::adjust_heap(first, holeIndex, len, *(first+holeIndex), comp);
+        // LOGI("first: ", *first, " last: ", *last);
+        for(int i = 0; i < len; i++) {
+            // LOGI(i," :", *(first+i));
+        }
+        if(0 == holeIndex) return;
+        holeIndex--;
+    }
+}
+
+template <class RandomIter, class Compared>
+void make_heap(RandomIter first, RandomIter last, Compared comp)
+{
+    // LOGI("make_heap(RandomIter first, RandomIter last, Compared comp)");
+    wstl::make_heap_aux(first, last, distance_type(first), comp);
+}
+
+template <class RandomIter>
+void make_heap(RandomIter first, RandomIter last)
+{
+    wstl::make_heap_aux(first, last, distance_type(first));
+}
+
+/** heap end *******************************/
 /**** algobase.h */
 /*
 template <class BidirectionalIter1, class BidirectionalIter2>

@@ -423,6 +423,13 @@ void advance(InputIterator& i, Distance n)
     advance_dispatch(i, n, iterator_category(i));
 }
 
+template <class Iterator>
+typename iterator_traits<Iterator>::difference_type*
+distance_type(const Iterator&)
+{
+    return static_cast<typename iterator_traits<Iterator>::difference_type*>(0);
+}
+
 }   // namespace
 
 #endif

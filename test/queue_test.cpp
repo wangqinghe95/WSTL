@@ -93,11 +93,72 @@ void testOperator()
     LOGI("test operator passed!");
 }
 
-int main()
+int testQueue()
 {
     testConstruct();
     testEmplace();
     testSwap();
     testOperator();
+    return 0;
+}
+
+void testPriorityConstruct()
+{
+    wstl::priority_queue<int> p_queue;
+
+    wstl::priority_queue<int> p_queue_n(10);
+    assert(p_queue_n.size() == 10 && "priority_queue(n) error");
+
+    wstl::priority_queue<int> p_queue_n_value(10, 10);
+    assert(p_queue_n_value.size() == 10 && p_queue_n_value.top() == 10 && "priority_queue(n,value) error");
+
+    int arr[] = {6,1,2,3,4,5};
+    wstl::priority_queue<int> p_queue_iter(arr, arr+6);
+    // wstl::priority_queue<int,wstl::vector<int>,wstl::greater<int>> p_queue_iter(arr, arr+6);
+    
+    // LOGI(p_queue_iter.top());
+    assert(p_queue_iter.size() == 6 && p_queue_iter.top() == 6 && "priority_queue(iter,iter) error");
+
+    wstl::priority_queue<int> p_queue_list{5,1,2,3,9};
+    assert(p_queue_list.size() == 5 && p_queue_list.top() == 9 && "priority_queue(list) error");
+    
+    const wstl::vector<int> vec{5,2,6,8,9};
+    wstl::priority_queue<int> p_queue_container(vec);
+    assert(p_queue_container.size() == 5 && p_queue_container.top() == 9 && "priority_queue(Container&) error");
+
+    wstl::vector<int> vec1{5,2,6,8,9};
+    wstl::priority_queue<int> p_queue_container_move(wstl::move(vec1));
+    assert(vec1.size() == 0 && p_queue_container_move.size() == 5 && p_queue_container_move.top() == 9 && "priority_queue(Container&&) error");
+
+    wstl::priority_queue<int> p_queue_move {5,1,2,7,9};
+    wstl::priority_queue<int> p_queue_copy(wstl::move(p_queue_move));
+    assert(p_queue_move.size() == 0 && p_queue_copy.size() == 5 && p_queue_copy.top() == 9 && "priority_queue(priority_queue&&) error");
+
+    wstl::priority_queue<int> p_operator;
+    p_operator = p_queue_copy;
+    assert(p_operator.size() == p_queue_copy.size() && p_operator.size() == 5 && p_operator.top() == 9 && "operator= error");
+
+    wstl::priority_queue<int> p_operator_ori_1 {1,2,3,4,5};
+    wstl::priority_queue<int> p_operator_move_1;
+    p_operator_move_1 = wstl::move(p_operator_ori_1);
+    assert(p_operator.size() == 5 && p_operator.top() == 5 && "operator=(priority_queue&&) error");
+
+    wstl::priority_queue<int> p_operator_2;
+    p_operator_2 = {4,2,1,7,8,9};
+    assert(p_operator.size() == 6 && p_operator.top() == 9 && "operator=(std::initializer_list) error");
+
+    
+
+    LOGI("test priority queue passed!");
+}
+
+void testPriorityQueue()
+{
+    testPriorityConstruct();
+}
+
+int main()
+{
+    testPriorityQueue();
     return 0;
 }
