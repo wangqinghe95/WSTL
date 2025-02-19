@@ -468,6 +468,45 @@ void make_heap(RandomIter first, RandomIter last)
     wstl::make_heap_aux(first, last, distance_type(first));
 }
 
+template <class RandomIter, class Compared, class Distance>
+void push_heap_d(RandomIter first, RandomIter last, Distance*)
+{
+    wstl::push_heap_aux(first, (last - first) - 1, static_cast<Distance>(0), *(last-1));
+}
+
+template <class RandomIter, class Compared, class Distance>
+void push_heap_d(RandomIter first, RandomIter last, Distance*, Compared comp)
+{
+    wstl::push_heap_aux(first, (last - first) - 1, static_cast<Distance>(0),
+                *(last-1), comp);
+}
+
+template <class RandomIter>
+void push_heap(RandomIter first, RandomIter last)
+{
+    wstl::push_heap_d(first, last, distance_type(first));
+}
+
+template <class RandomIter, class Compared>
+void push_heap(RandomIter first, RandomIter last, Compared comp)
+{
+    wstl::push_heap_d(first, last, distance_type(first), comp);
+}
+
+template <class RandomIter, class T, class Distance, class Compared>
+void pop_heap_aux(RandomIter first, RandomIter last, RandomIter result,
+                    T value, Distance*, Compared comp)
+{
+    *result = *first;
+    wstl::adjust_heap(first, static_cast<Distance>(0), last - first, value, comp);
+}
+
+template <class RandomIter, class Compared>
+void pop_heap(RandomIter first, RandomIter last, Compared comp)
+{
+    wstl::pop_heap_aux(first, last-1, last-1, *(last-1), distance_type(first), comp);
+}
+
 /** heap end *******************************/
 /**** algobase.h */
 /*

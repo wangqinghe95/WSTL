@@ -248,7 +248,80 @@ public:
         return c_.size();
     }
 
+    // modify
+    template <class... Args>
+    void emplace(Args&& ...args)
+    {
+        c_.emplace_back(wstl::forward<Args>(args)...);
+        wstl::push_heap(c_.begin(), c_.end(), comp_);
+    }
+
+    void push(const value_type& value)
+    {
+        c_.push_back(value);
+        wstl::push_heap(c_.begin(), c_.end(), comp_);
+    }
+
+    void push(value_type&& value)
+    {
+        c_.push_back(wstl::move(value));
+        wstl::push_heap(c_.begin(), c_.end(), comp_);
+    }
+
+    void pop()
+    {
+        wstl::pop_heap(c_.begin(), c_.end(), comp_);
+        c_.pop_back();
+    }
+
+    void clear()
+    {
+        while (!empty())
+        {
+            pop();
+        }
+    }
+
+    void swap(priority_queue& rhs) noexcept(noexcept(wstl::swap(c_, rhs.c_)) &&
+                                            noexcept(wstl::swap(comp_, rhs.comp_)))
+    {
+        wstl::swap(c_, rhs.c_);
+        wstl::swap(comp_, rhs.comp_);
+    }
+
+public:
+    friend bool operator==(const priority_queue& lhs, const priority_queue& rhs)
+    {
+        return lhs.c_ == rhs.c_;
+    }
+
+    friend bool operator!=(const priority_queue& lhs, const priority_queue& rhs)
+    {
+        return lhs.c_ != rhs.c_;
+    }
+
 };  // priority queue
+
+template <class T, class Container, class Compare>
+bool operator==(priority_queue<T, Container, Compare>& lhs,
+                priority_queue<T, Container, Compare>& rhs)
+{
+    return lhs == rhs;
+}
+
+template <class T, class Container, class Compare>
+bool operator!=(priority_queue<T, Container, Compare>& lhs,
+                priority_queue<T, Container, Compare>& rhs)
+{
+    return lhs != rhs;
+}
+
+template <class T, class Container, class Compare>
+void swap(priority_queue<T, Container, Compare>& lhs,
+                priority_queue<T, Container, Compare>& rhs) noexcept(noexcept(lhs.swap(rhs)))
+{
+    lhs.swap(rhs);
+}
 
 }   // wstl
 

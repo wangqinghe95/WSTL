@@ -102,7 +102,7 @@ int testQueue()
     return 0;
 }
 
-void testPriorityConstruct()
+void testPriorityQueueConstruct()
 {
     wstl::priority_queue<int> p_queue;
 
@@ -141,20 +141,41 @@ void testPriorityConstruct()
     wstl::priority_queue<int> p_operator_ori_1 {1,2,3,4,5};
     wstl::priority_queue<int> p_operator_move_1;
     p_operator_move_1 = wstl::move(p_operator_ori_1);
-    assert(p_operator.size() == 5 && p_operator.top() == 5 && "operator=(priority_queue&&) error");
+    assert(p_operator_move_1.size() == 5 && p_operator_move_1.top() == 5 && "operator=(priority_queue&&) error");
 
     wstl::priority_queue<int> p_operator_2;
     p_operator_2 = {4,2,1,7,8,9};
-    assert(p_operator.size() == 6 && p_operator.top() == 9 && "operator=(std::initializer_list) error");
-
-    
+    assert(p_operator_2.size() == 6 && p_operator_2.top() == 9 && "operator=(std::initializer_list) error");
 
     LOGI("test priority queue passed!");
 }
 
+void testPriorityQueueEmplace()
+{
+    wstl::priority_queue<int> pri_que {2,4,5,8,9};
+    assert(pri_que.size() == 5 && pri_que.top() == 9 && "priority_queue error");
+
+    pri_que.emplace(10);
+    assert(pri_que.size() == 6 && pri_que.top() == 10 && "priority_queue emplace error");
+
+    pri_que.pop();
+    assert(pri_que.size() == 5 && pri_que.top() == 9 && "priority_queue pop error");
+
+    pri_que.push(10);
+    assert(pri_que.size() == 6 && pri_que.top() == 10 && "priority_queue push(value_type&&) error");
+
+    const int value = 11;
+    pri_que.push(value);
+    assert(pri_que.size() == 7 && pri_que.top() == 11 && "priority_queue push(const value_type&) error");
+
+    LOGI("test priority_queue emplace passed!");
+
+}
+
 void testPriorityQueue()
 {
-    testPriorityConstruct();
+    testPriorityQueueConstruct();
+    testPriorityQueueEmplace();
 }
 
 int main()
